@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	Version    = "dev"
+	Version    = "1.0.1"
 	Printers   = make(map[string]EPrinter)
 	Port       *string
 	ConfigFile *string

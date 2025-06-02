@@ -14,7 +14,7 @@ func (p FilePrinter) String() string {
 
 func NewFilePrinter(path string) FilePrinter {
 	if path == "" {
-		path = "./png" // 默认路径
+		path = "./png-receipts" // 默认路径
 	} else if path[len(path)-1] == '/' {
 		path = path[:len(path)-1] // 去掉末尾的斜杠
 	}
@@ -29,6 +29,6 @@ func (p FilePrinter) OpenCashBox() error {
 	return nil // 文件打印机不支持打开钱箱
 }
 func (p FilePrinter) PrintRasterImage(img *RasterImage) error {
-	filename := fmt.Sprintf("%s/%s.png", p, time.Now().Format("20060102-150405"))
+	filename := fmt.Sprintf("%s/%s.png", string(p), time.Now().Format("20060102-150405"))
 	return img.SaveToPngFile(filename)
 }

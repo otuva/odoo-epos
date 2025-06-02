@@ -62,7 +62,7 @@ func (c *ConfigPrinter) ToEPrinter() EPrinter {
 			cashDrawerCommand: cashDrawerCommand, // 钱箱命令
 		}
 	case "file":
-		return FilePrinter(c.Address)
+		return NewFilePrinter(c.Address) // 文件打印机
 	default:
 		return nil // 未知类型
 	}

@@ -31,9 +31,11 @@ Step4. Restart this program:  sudo systemctl restart epos.service
 
 Step5. Config the url in Odoo POS "ePOS Printer" Ip address field
 
+Do NOT start with `https://`
+
 ```
-https://localhost.ip.hogantech.net/p0
-https://192-168-123-1.ip.hogantech.net/p1
+localhost.ip.hogantech.net/p0
+192-168-123-1.ip.hogantech.net/p1
 ```
 
 ## Sample of config.json
