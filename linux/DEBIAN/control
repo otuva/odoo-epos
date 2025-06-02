@@ -1,0 +1,7 @@
+Package: ePOS
+Version: 1.0.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: Hogan <xiaohao0576@gmail.com>
+Description: This package provides an IoT box for Odoo ePOS printers, enabling seamless integration and management of point-of-sale devices.

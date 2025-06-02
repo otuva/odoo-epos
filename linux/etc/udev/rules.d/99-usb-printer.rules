@@ -1,0 +1,5 @@
+# 使用 udevadm info -a -n /dev/usb/lp0 查询idVendor和idProduct
+# sudo udevadm control --reload
+# sudo udevadm trigger
+
+KERNEL=="lp[0-9]*", SUBSYSTEM=="usbmisc", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5743", SYMLINK+="xp-n160ii"

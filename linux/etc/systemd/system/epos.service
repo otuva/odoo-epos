@@ -1,0 +1,14 @@
+[Unit]
+Description = Epson ePos Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5s
+WorkingDirectory=/usr/local/odoo-epos
+ExecStart=/usr/local/odoo-epos/epos -c config.json -p 443
+
+[Install]
+WantedBy = multi-user.target

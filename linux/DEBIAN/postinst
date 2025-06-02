@@ -1,0 +1,9 @@
+#!/bin/bash
+set -e
+
+chmod 755 /usr/local/odoo-epos/epos
+udevadm control --reload
+udevadm trigger
+systemctl daemon-reload
+systemctl start epos.service
+systemctl enable epos.service

@@ -1,0 +1,15 @@
+{
+    "p0": {
+        "type": "file",
+        "address": "/tmp/pic"
+    },
+    "p1": {
+        "type": "tcp",
+        "address": "192.168.123.101:9100"
+    },
+    "p2": {
+        "type": "usb",
+        "address": "/dev/xp-n160ii",
+        "margin_left": 16
+    }
+}
