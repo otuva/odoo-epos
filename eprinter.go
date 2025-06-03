@@ -24,7 +24,7 @@ type ConfigPrinter struct {
 func (c *ConfigPrinter) ToEPrinter() EPrinter {
 	//设置默认值和边距
 	if c.MarginLeft <= 0 {
-		c.MarginLeft = 16 // 默认左边距
+		c.MarginLeft = 32 // 默认左边距
 	} else if c.MarginLeft > 64 {
 		c.MarginLeft = 64 // 最大左边距
 	} else {

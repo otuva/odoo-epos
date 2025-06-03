@@ -23,6 +23,9 @@ func (p *TCPPrinter) Open() error {
 	if p.HostPort == "" {
 		return net.ErrClosed
 	}
+	if p.fd != nil {
+		p.fd.Close()
+	}
 	conn, err := net.DialTimeout("tcp", p.HostPort, 5*time.Second)
 	if err != nil {
 		return err
@@ -41,7 +44,9 @@ func (p *TCPPrinter) Open() error {
 
 func (p *TCPPrinter) Close() error {
 	if p.fd != nil {
-		return p.fd.Close()
+		err := p.fd.Close()
+		p.fd = nil
+		return err
 	}
 	return nil
 }
@@ -64,9 +69,13 @@ func (p *TCPPrinter) PrintRasterImage(img *RasterImage) error {
 			return err
 		}
 	}
-	defer p.Close()                             // 确保在函数结束时关闭连接
-	img.AddMargin(p.marginLeft, p.marginBottom) // 添加边距
-	p.fd.Write(img.ToEscPosRasterCommand(1024)) // 发送图像数据
-	p.fd.Write(p.cutCommand)                    // 切纸命令
+	defer p.Close()
+	img.AddMargin(p.marginLeft, p.marginBottom)
+	if _, err := p.fd.Write(img.ToEscPosRasterCommand(1024)); err != nil {
+		return err
+	}
+	if _, err := p.fd.Write(p.cutCommand); err != nil {
+		return err
+	}
 	return nil
 }
