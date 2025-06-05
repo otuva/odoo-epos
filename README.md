@@ -1,7 +1,12 @@
-## Compile program
+## Compile program for linux
 ```
 go build -o /tmp/epos .
 ```
+## Compile program for Windows x86_64
+```
+env GOOS=windows GOARCH=amd64 go build -o epos.exe
+```
+Then install epos.exe as a windows service by NSSM (https://nssm.cc/)
 
 ## Build deb package
 ```
@@ -43,8 +48,8 @@ localhost.ip.hogantech.net/p0
 {
     "p0": {
         "type": "usb",
-        "address": "/dev/usb/lp0",
-        "margin_left": 16,
+        "address": "/dev/xp-n160-ii",
+        "margin_left": 32,
         "margin_bottom": 120
     },
     "p1": {

@@ -85,7 +85,7 @@ func ePOShandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Failed to print image:", err)
 			return
 		}
-		fmt.Println("打印成功", printer, time.Now().Format("2006-01-02 15:04:05"))
+		fmt.Println("打印成功", printer)
 	} else if strings.Contains(string(body), EPOS_PULSE) {
 		// 检查是否为打开钱箱请求
 		err := printer.OpenCashBox()
@@ -95,7 +95,7 @@ func ePOShandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// 打开钱箱成功
-		fmt.Println("打开钱箱成功", printer, time.Now().Format("2006-01-02 15:04:05"))
+		fmt.Println("打开钱箱成功", printer)
 	} else {
 		fmt.Println("不支持的ePOS命令", string(body))
 		http.Error(w, "Unsupported command, only support <pulse> and <image>", http.StatusInternalServerError)
