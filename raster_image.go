@@ -60,9 +60,9 @@ func NewRasterImageFromPNG(img image.Image) *RasterImage {
 			var isBlack bool
 			if x < bounds.Dx() {
 				r, g, b, _ := img.At(bounds.Min.X+x, bounds.Min.Y+y).RGBA()
-				// 计算灰度值，范围0-65535，低于阈值视为黑色
+				// 计算灰度值，范围0-65535
 				gray := (r*299 + g*587 + b*114) / 1000
-				isBlack = gray < 32768 // 阈值可调整，32768约等于128
+				isBlack = gray < 48000 // 只有灰度非常高（接近65535）才算白，其余都算黑
 			} else {
 				isBlack = false // 超出原图部分补白
 			}

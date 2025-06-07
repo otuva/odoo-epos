@@ -108,8 +108,10 @@ func ePOShandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func StartHttpServer() {
-	LoadCertFiles()                   // 加载证书文件
-	http.HandleFunc("/", ePOShandler) // 处理根路径的请求
+	LoadCertFiles()                                  // 加载证书文件
+	http.HandleFunc("/eprint/png", ePrintPNGhandler) // 处理 PNG 打印请求
+	http.HandleFunc("/eprint/raw", ePrintRAWhandler) // 处理RAW指令打印请求
+	http.HandleFunc("/", ePOShandler)                // 处理根路径的请求
 
 	cert, err := tls.X509KeyPair(ServerCert, ServerKey)
 	if err != nil {
