@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"image"
+	"image/color"
 	"image/png"
 	"os"
 	"strconv"
@@ -187,28 +188,29 @@ func (img *RasterImage) AddMargin(marginLeft, marginBottom int) {
 	img.AddMarginBottom(marginBottom)
 }
 
-// 将图像转换为image.Image接口
+// 将图像转换为1bit黑白image.Image接口
 func (img *RasterImage) ToPngImage() image.Image {
 	if img == nil || img.Width <= 0 || img.Height <= 0 || img.Content == nil {
 		return nil
 	}
 	bounds := image.Rect(0, 0, img.Width, img.Height)
-	binaryImg := image.NewGray(bounds)
+	// 黑白调色板，索引0为白，1为黑
+	palette := []color.Color{color.White, color.Black}
+	palettedImg := image.NewPaletted(bounds, palette)
 	widthBytes := img.Width / 8
 
-	for y := range img.Height {
-		for x := range img.Width {
+	for y := 0; y < img.Height; y++ {
+		for x := 0; x < img.Width; x++ {
 			byteIndex := y*widthBytes + x/8
 			bitIndex := 7 - (x % 8)
-			grayIdx := y*img.Width + x
-			if byteIndex < len(img.Content) && (img.Content[byteIndex]&(1<<bitIndex)) == 0 {
-				binaryImg.Pix[grayIdx] = 255 // 白色
+			if byteIndex < len(img.Content) && (img.Content[byteIndex]&(1<<bitIndex)) != 0 {
+				palettedImg.SetColorIndex(x, y, 1) // 黑色
 			} else {
-				binaryImg.Pix[grayIdx] = 0 // 黑色
+				palettedImg.SetColorIndex(x, y, 0) // 白色
 			}
 		}
 	}
-	return binaryImg
+	return palettedImg
 }
 
 // 将二值矩形图像输出到png文件采用无压缩
