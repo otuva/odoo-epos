@@ -10,6 +10,7 @@ import (
 type EPrinter interface {
 	OpenCashBox() error
 	PrintRasterImage(img *RasterImage) error
+	PrintRaw(data []byte) error
 }
 
 type ConfigPrinter struct {

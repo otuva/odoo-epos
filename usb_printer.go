@@ -71,3 +71,18 @@ func (p *USBPrinter) Reset() error {
 	}
 	return nil
 }
+
+func (p *USBPrinter) PrintRaw(data []byte) error {
+	err := p.Reset()
+	if err != nil {
+		return fmt.Errorf("failed to reset printer: %w", err)
+	}
+	if len(data) == 0 {
+		return fmt.Errorf("no data to print")
+	}
+	if _, err := p.fd.Write(data); err != nil {
+		return fmt.Errorf("failed to write data to printer: %w", err)
+	}
+	p.fd.Sync() // 确保数据写入
+	return nil
+}

@@ -80,3 +80,19 @@ func (p *TCPPrinter) PrintRasterImage(img *RasterImage) error {
 	}
 	return nil
 }
+
+func (p *TCPPrinter) PrintRaw(data []byte) error {
+	if p.fd == nil {
+		if err := p.Open(); err != nil {
+			return err
+		}
+	}
+	defer p.Close()
+	if len(data) == 0 {
+		return fmt.Errorf("no data to print")
+	}
+	if _, err := p.fd.Write(data); err != nil {
+		return fmt.Errorf("failed to write data to printer: %w", err)
+	}
+	return nil
+}

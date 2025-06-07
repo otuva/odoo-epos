@@ -32,3 +32,17 @@ func (p FilePrinter) PrintRasterImage(img *RasterImage) error {
 	filename := fmt.Sprintf("%s/%s.png", string(p), time.Now().Format("20060102-150405"))
 	return img.SaveToPngFile(filename)
 }
+
+func (p FilePrinter) PrintRaw(data []byte) error {
+	filename := fmt.Sprintf("%s/%s.bin", string(p), time.Now().Format("20060102-150405"))
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("failed to create file %s: %w", filename, err)
+	}
+	defer file.Close()
+
+	if _, err := file.Write(data); err != nil {
+		return fmt.Errorf("failed to write data to file %s: %w", filename, err)
+	}
+	return nil
+}
