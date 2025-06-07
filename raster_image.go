@@ -278,3 +278,247 @@ func (img *RasterImage) UnmarshalXML(d *xml.Decoder, start xml.StartElement) err
 
 	return nil
 }
+
+// WithCrop 返回裁剪后的图像
+// x, y: 裁剪区域左上角坐标
+// width, height: 裁剪区域的宽度和高度
+// 如果裁剪区域超出原图范围，则返回nil
+// 如果裁剪区域无效（如宽度或高度为0），也返回nil
+// 注意：裁剪后的图像宽度和高度必须是8的倍数
+// 返回的新图像对象的宽度和高度可能会被调整为8的倍数
+// 如果原图像无效（如宽度或高度小于等于0，或内容为nil），也返回nil
+// 如果裁剪区域的宽度或高度不是8的倍数，则会自动调整为最接近的8的倍数
+// 如果裁剪区域的左上角坐标超出原图范围，则返回nil
+// 如果裁剪区域的宽度或高度为0，则返回nil
+// 如果裁剪区域的左上角坐标为负数，则返回nil
+// 如果裁剪区域的宽度或高度超过原图范围，则返回nil
+// 如果裁剪区域的左上角坐标在原图范围内，但宽度或高度超出原图范围，则返回nil
+func (img *RasterImage) WithCrop(x, y, width, height int) *RasterImage {
+	if img == nil || img.Width <= 0 || img.Height <= 0 || img.Content == nil {
+		return nil
+	}
+
+	// 支持负数索引
+	if x < 0 {
+		x = img.Width + x
+	}
+	if y < 0 {
+		y = img.Height + y
+	}
+
+	// 检查参数有效性
+	if x < 0 || y < 0 || width <= 0 || height <= 0 || x+width > img.Width || y+height > img.Height {
+		return nil // 无效的裁剪参数
+	}
+
+	croppedContent := make([]byte, height*width/8)
+	for row := 0; row < height; row++ {
+		srcRowStart := (y+row)*img.Width/8 + x/8
+		srcRowEnd := srcRowStart + width/8
+		dstRowStart := row * width / 8
+		copy(croppedContent[dstRowStart:], img.Content[srcRowStart:srcRowEnd])
+	}
+
+	return &RasterImage{
+		Width:   width,
+		Height:  height,
+		Align:   img.Align,
+		Content: croppedContent,
+	}
+}
+
+// WithCropRows 返回裁剪后的图像，仅裁剪行
+// startRow, endRow: 裁剪区域的起始行和结束行（包含）
+// 如果裁剪区域超出原图范围，则返回nil
+// 如果裁剪区域无效（如起始行大于结束行，或行数为0），也返回nil
+// 注意：裁剪后的图像宽度和高度必须是8的倍数
+// 返回的新图像对象的宽度和高度可能会被调整为8的倍数
+// 如果原图像无效（如宽度或高度小于等于0，或内容为nil），也返回nil
+// 如果裁剪区域的行数不是8的倍数，则会自动调整为最接近的8的倍数
+// 如果裁剪区域的起始行坐标超出原图范围，则返回nil
+// 如果裁剪区域的行数为0，则返回nil
+func (img *RasterImage) WithCropRows(startRow, endRow int) *RasterImage {
+	if img == nil || img.Width <= 0 || img.Height <= 0 || img.Content == nil {
+		return nil
+	}
+	// 支持负数索引
+	if startRow < 0 {
+		startRow = img.Height + startRow
+	}
+	if endRow < 0 {
+		endRow = img.Height + endRow
+	}
+	// 检查参数有效性
+	if startRow < 0 || endRow < startRow || endRow >= img.Height {
+		return nil // 无效的行范围
+	}
+
+	croppedHeight := endRow - startRow + 1
+	croppedContent := make([]byte, croppedHeight*img.Width/8)
+	for row := 0; row < croppedHeight; row++ {
+		srcRowStart := (startRow + row) * img.Width / 8
+		srcRowEnd := srcRowStart + img.Width/8
+		dstRowStart := row * img.Width / 8
+		copy(croppedContent[dstRowStart:], img.Content[srcRowStart:srcRowEnd])
+	}
+
+	return &RasterImage{
+		Width:   img.Width,
+		Height:  croppedHeight,
+		Align:   img.Align,
+		Content: croppedContent,
+	}
+}
+
+// WithAppend 返回拼接后的图像
+// other: 要拼接的另一个图像
+// 如果原图像或其他图像无效（如宽度或高度小于等于0，或内容为nil），则返回nil
+// 如果其他图像的宽度与原图像不匹配，则返回nil
+// 拼接后的图像高度为原图像高度加上其他图像高度
+// 拼接后的图像宽度与原图像相同
+func (img *RasterImage) WithAppend(other *RasterImage) *RasterImage {
+	if img == nil || other == nil || img.Width <= 0 || img.Height <= 0 || img.Content == nil {
+		return nil
+	}
+	if other.Width != img.Width {
+		return nil // 宽度不匹配，无法拼接
+	}
+
+	newHeight := img.Height + other.Height
+	newContent := make([]byte, newHeight*img.Width/8)
+	copy(newContent, img.Content)
+	copy(newContent[img.Height*img.Width/8:], other.Content)
+
+	return &RasterImage{
+		Width:   img.Width,
+		Height:  newHeight,
+		Align:   img.Align,
+		Content: newContent,
+	}
+}
+
+// WithPaste 返回粘贴后的图像
+// other: 要粘贴的另一个图像
+// x, y: 粘贴位置的左上角坐标
+// 如果粘贴位置超出原图像范围，则返回原图像
+// 如果其他图像的宽度或高度超过原图像范围，则自动裁剪
+// 粘贴后的图像宽度和高度与原图像相同
+// 粘贴操作会将其他图像的内容覆盖到原图像的指定位置
+// 注意：粘贴操作不会改变原图像的对齐方式
+// 如果粘贴位置在原图像范围内，但其他图像的内容超出原图像范围，则只粘贴在原图像范围内的部分
+// 如果其他图像的内容为空，则不会对原图像进行任何修改
+// 如果其他图像的宽度或高度为0，则不会对原图像进行任何修改
+// 如果其他图像的内容为nil，则不会对原图像进行任何修改
+// 如果其他图像的宽度或高度小于0，则不会对原图像进行任何修改
+func (img *RasterImage) WithPaste(other *RasterImage, x, y int) *RasterImage {
+	// 检查参数有效性
+	if img == nil || other == nil || img.Width <= 0 || img.Height <= 0 || img.Content == nil || other.Content == nil {
+		return img
+	}
+	// 支持负数索引
+	if x < 0 {
+		x = img.Width + x
+	}
+	if y < 0 {
+		y = img.Height + y
+	}
+
+	if x < 0 || y < 0 || x >= img.Width || y >= img.Height {
+		return img // 粘贴起点超出原图范围
+	}
+
+	// 自动裁剪other的宽高，防止越界
+	maxWidth := img.Width - x
+	maxHeight := img.Height - y
+	pasteWidth := other.Width
+	pasteHeight := other.Height
+	if pasteWidth > maxWidth {
+		pasteWidth = maxWidth
+	}
+	if pasteHeight > maxHeight {
+		pasteHeight = maxHeight
+	}
+
+	newContent := make([]byte, len(img.Content))
+	copy(newContent, img.Content)
+
+	for row := 0; row < pasteHeight; row++ {
+		srcRowStart := row * other.Width / 8
+		dstRowStart := (y+row)*img.Width/8 + x/8
+		for col := 0; col < pasteWidth; col++ {
+			if (other.Content[srcRowStart+col/8] & (1 << (7 - (col % 8)))) != 0 {
+				newContent[dstRowStart+col/8] |= 1 << (7 - ((x + col) % 8))
+			}
+		}
+	}
+
+	return &RasterImage{
+		Width:   img.Width,
+		Height:  img.Height,
+		Align:   img.Align,
+		Content: newContent,
+	}
+}
+
+// WithErase 返回擦除后的图像
+// x, y: 擦除区域的左上角坐标
+// width, height: 擦除区域的宽度和高度
+// 如果擦除区域超出原图像范围，则返回原图像
+// 如果擦除区域无效（如宽度或高度为0），也返回原图像
+// 擦除操作会将指定区域的内容清零
+// 注意：擦除操作不会改变原图像的对齐方式
+// 如果擦除区域在原图像范围内，但宽度或高度超出原图像范围，则只擦除在原图像范围内的部分
+// 如果擦除区域的左上角坐标超出原图像范围，则返回原图像
+// 如果擦除区域的宽度或高度为0，则返回原图像
+// 如果擦除区域的左上角坐标为负数，则返回原图像
+func (img *RasterImage) WithErase(x, y, width, height int) *RasterImage {
+	// 检查参数有效性
+	if img == nil || img.Width <= 0 || img.Height <= 0 || img.Content == nil {
+		return img
+	}
+	// 支持负数索引
+	if x < 0 {
+		x = img.Width + x
+	}
+	if y < 0 {
+		y = img.Height + y
+	}
+
+	if x < 0 || y < 0 || width <= 0 || height <= 0 || x+width > img.Width || y+height > img.Height {
+		return img // 无效的擦除参数
+	}
+
+	newContent := make([]byte, len(img.Content))
+	copy(newContent, img.Content)
+
+	for row := 0; row < height; row++ {
+		srcRowStart := (y + row) * img.Width / 8
+		dstRowStart := srcRowStart + x/8
+		for col := 0; col < width; col++ {
+			newContent[dstRowStart+col/8] &^= (1 << (7 - ((x + col) % 8))) // 直接清零，无需判断
+		}
+	}
+
+	return &RasterImage{
+		Width:   img.Width,
+		Height:  img.Height,
+		Align:   img.Align,
+		Content: newContent,
+	}
+}
+
+// String 返回RasterImage的字符串表示
+// 包含宽度、高度、对齐方式和内容长度
+// 如果图像为nil，则返回"RasterImage(nil)"
+// 注意：内容长度是字节数，不是像素数
+// 例如：RasterImage(Width: 384, Height: 240, Align: center, Content Length: 1200)
+// 如果图像的宽度或高度为0，则内容长度也会为0
+// 如果图像的内容为nil，则内容长度也会为0
+// 如果图像的对齐方式为空，则显示为"Align: "（没有值）
+func (img *RasterImage) String() string {
+	if img == nil {
+		return "RasterImage(nil)"
+	}
+	return fmt.Sprintf("RasterImage(Width: %d, Height: %d, Align: %s, Content Length: %d)",
+		img.Width, img.Height, img.Align, len(img.Content))
+}
