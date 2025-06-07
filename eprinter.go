@@ -58,6 +58,14 @@ func (c *ConfigPrinter) ToEPrinter() EPrinter {
 			cutCommand:        cutCommand,        // 切纸命令
 			cashDrawerCommand: cashDrawerCommand, // 钱箱命令
 		}
+	case "serial":
+		return &SerialPrinter{
+			paperWidth:        c.PaperWidth,      // 纸张宽度
+			marginBottom:      c.MarginBottom,    // 下边距
+			serialConfig:      c.Address,         // 串口地址
+			cutCommand:        cutCommand,        // 切纸命令
+			cashDrawerCommand: cashDrawerCommand, // 钱箱命令
+		}
 	case "file":
 		return NewFilePrinter(c.Address) // 文件打印机
 	default:
