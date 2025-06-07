@@ -194,19 +194,19 @@ func (img *RasterImage) ToPngImage() image.Image {
 		return nil
 	}
 	bounds := image.Rect(0, 0, img.Width, img.Height)
-	// 黑白调色板，索引0为白，1为黑
 	palette := []color.Color{color.White, color.Black}
 	palettedImg := image.NewPaletted(bounds, palette)
 	widthBytes := img.Width / 8
 
 	for y := 0; y < img.Height; y++ {
+		srcRow := img.Content[y*widthBytes : (y+1)*widthBytes]
+		dstRow := palettedImg.Pix[y*palettedImg.Stride : y*palettedImg.Stride+img.Width]
 		for x := 0; x < img.Width; x++ {
-			byteIndex := y*widthBytes + x/8
-			bitIndex := 7 - (x % 8)
-			if byteIndex < len(img.Content) && (img.Content[byteIndex]&(1<<bitIndex)) != 0 {
-				palettedImg.SetColorIndex(x, y, 1) // 黑色
+			b := srcRow[x/8]
+			if (b & (1 << (7 - (x % 8)))) != 0 {
+				dstRow[x] = 1 // 黑色
 			} else {
-				palettedImg.SetColorIndex(x, y, 0) // 白色
+				dstRow[x] = 0 // 白色
 			}
 		}
 	}
