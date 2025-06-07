@@ -7,7 +7,7 @@ import (
 )
 
 type USBPrinter struct {
-	marginLeft        int      // 左边距
+	paperWidth        int      // 纸张宽度
 	marginBottom      int      // 下边距
 	cutCommand        []byte   // 切纸命令
 	cashDrawerCommand []byte   // 钱箱命令
@@ -16,7 +16,7 @@ type USBPrinter struct {
 }
 
 func (p *USBPrinter) String() string {
-	return fmt.Sprintf("USBPrinter{devFile: %s, marginLeft: %d, marginBottom: %d}", p.filePath, p.marginLeft, p.marginBottom)
+	return fmt.Sprintf("USBPrinter{devFile: %s, paperWidth: %d, marginBottom: %d}", p.filePath, p.paperWidth, p.marginBottom)
 }
 
 func (p *USBPrinter) Open() error {
@@ -48,7 +48,8 @@ func (p *USBPrinter) PrintRasterImage(img *RasterImage) error {
 		return fmt.Errorf("failed to reset printer: %w", err)
 	}
 	// 发送图像数据
-	img.AddMargin(p.marginLeft, p.marginBottom) // 添加边距
+	marginLeft := img.AutoLeftMargin(p.paperWidth)
+	img.AddMargin(marginLeft, p.marginBottom) // 添加边距
 	p.fd.Write(img.ToEscPosRasterCommand(1024))
 	p.fd.Write(p.cutCommand) // 切纸命令
 	p.fd.Sync()              // 确保数据写入

@@ -48,21 +48,21 @@ localhost.ip.hogantech.net/p0
 {
     "p0": {
         "type": "usb",
-        "address": "/dev/xp-n160-ii",
-        "margin_left": 32,
+        "address": "/dev/xp-n160ii",
+        "paper_width": 576,
         "margin_bottom": 120
     },
     "p1": {
         "type": "tcp",
-        "address": "192.168.123.101:9100"
+        "address": "192.168.123.51:9100"
     },
     "p2": {
         "type": "tcp",
-        "address": "192.168.123.102:9100"
+        "address": "192.168.123.52:9100"
     },
-    "p3": {
+    "f0": {
         "type": "file",
-        "address": "/home/user/Pictures"
+        "address": "/tmp/receipts"
     }
 }
 ```

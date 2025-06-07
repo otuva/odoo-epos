@@ -7,7 +7,7 @@ import (
 )
 
 type TCPPrinter struct {
-	marginLeft        int      // 左边距
+	paperWidth        int      // 纸张宽度
 	marginBottom      int      // 下边距
 	cutCommand        []byte   //切纸命令
 	cashDrawerCommand []byte   // 钱箱命令
@@ -16,7 +16,7 @@ type TCPPrinter struct {
 }
 
 func (p *TCPPrinter) String() string {
-	return fmt.Sprintf("TCPPrinter{HostPort: %s, marginLeft: %d, marginBottom: %d}", p.HostPort, p.marginLeft, p.marginBottom)
+	return fmt.Sprintf("TCPPrinter{HostPort: %s, paperWidth: %d, marginBottom: %d}", p.HostPort, p.paperWidth, p.marginBottom)
 }
 
 func (p *TCPPrinter) Open() error {
@@ -70,7 +70,8 @@ func (p *TCPPrinter) PrintRasterImage(img *RasterImage) error {
 		}
 	}
 	defer p.Close()
-	img.AddMargin(p.marginLeft, p.marginBottom)
+	marginLeft := img.AutoLeftMargin(p.paperWidth)
+	img.AddMargin(marginLeft, p.marginBottom)
 	if _, err := p.fd.Write(img.ToEscPosRasterCommand(1024)); err != nil {
 		return err
 	}

@@ -15,7 +15,7 @@ type EPrinter interface {
 type ConfigPrinter struct {
 	Type              string `json:"type"`                // 打印机类型
 	Address           string `json:"address"`             // 打印机地址
-	MarginLeft        int    `json:"margin_left"`         // 左边距
+	PaperWidth        int    `json:"paper_width"`         // 纸张宽度
 	MarginBottom      int    `json:"margin_bottom"`       // 下边距
 	CutCommnad        string `json:"cut_command"`         // 切纸命令
 	CashDrawerCommand string `json:"cash_drawer_command"` // 钱箱命令
@@ -23,12 +23,8 @@ type ConfigPrinter struct {
 
 func (c *ConfigPrinter) ToEPrinter() EPrinter {
 	//设置默认值和边距
-	if c.MarginLeft <= 0 {
-		c.MarginLeft = 32 // 默认左边距
-	} else if c.MarginLeft > 64 {
-		c.MarginLeft = 64 // 最大左边距
-	} else {
-		c.MarginLeft = ((c.MarginLeft + 7) / 8) * 8 // 转换为最接近的8的倍数
+	if c.PaperWidth <= 0 {
+		c.PaperWidth = 576 // 默认纸张宽度
 	}
 
 	if c.MarginBottom <= 0 {
@@ -47,16 +43,16 @@ func (c *ConfigPrinter) ToEPrinter() EPrinter {
 	switch c.Type {
 	case "usb":
 		return &USBPrinter{
-			marginLeft:        c.MarginLeft,
-			marginBottom:      c.MarginBottom,
+			paperWidth:        c.PaperWidth,      // 纸张宽度
+			marginBottom:      c.MarginBottom,    // 下边距
 			filePath:          c.Address,         // USB打印机的文件路径
 			cutCommand:        cutCommand,        // 切纸命令
 			cashDrawerCommand: cashDrawerCommand, // 钱箱命令
 		}
 	case "tcp":
 		return &TCPPrinter{
-			marginLeft:        c.MarginLeft,
-			marginBottom:      c.MarginBottom,
+			paperWidth:        c.PaperWidth,      // 纸张宽度
+			marginBottom:      c.MarginBottom,    // 下边距
 			HostPort:          c.Address,         // 打印机地址
 			cutCommand:        cutCommand,        // 切纸命令
 			cashDrawerCommand: cashDrawerCommand, // 钱箱命令

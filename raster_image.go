@@ -8,6 +8,7 @@ import (
 	"image/png"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // EPOSImage 表示图片数据
@@ -87,14 +88,11 @@ func (img *RasterImage) ToEscPosRasterCommand(maxHeight int) []byte {
 }
 
 func (img *RasterImage) AddMarginLeft(margin int) {
-	if margin < 0 {
-		margin = 0
+	if margin <= 0 {
+		return // 如果边距小于等于0，则不添加边距
 	}
 	widthBytes := img.Width / 8
 	marginBytes := margin / 8
-	if marginBytes <= 0 {
-		return
-	}
 	newWidth := img.Width + margin
 	newContent := make([]byte, img.Height*(newWidth/8))
 	for row := 0; row < img.Height; row++ {
@@ -116,6 +114,25 @@ func (img *RasterImage) AddMarginBottom(margin int) {
 	newContent := make([]byte, len(img.Content)+margin*img.Width/8)
 	copy(newContent, img.Content)
 	img.Content = newContent
+}
+
+func (img *RasterImage) AutoLeftMargin(width int) int {
+	if img.Width >= width {
+		return 0 // 如果图像宽度大于等于指定宽度，则不需要左边距
+	}
+	align := strings.ToLower(img.Align)
+	margin := 0 // 默认左边距为0
+	switch align {
+	case "left":
+		return 0 // 左对齐不需要左边距
+	case "right":
+		margin = width - img.Width // 右对齐需要填充到指定宽度
+	default:
+		// 如果对齐方式不明确，默认使用居中对齐
+		margin = (width - img.Width) / 2
+	}
+	margin = (margin / 8) * 8 // 确保左边距是8的倍数
+	return margin
 }
 
 // AddMargin 添加左边距和下边距
