@@ -40,6 +40,46 @@ func NewRasterImage(width, height int, content []byte) *RasterImage {
 	}
 }
 
+func NewRasterImageFromPNG(img image.Image) *RasterImage {
+	if img == nil {
+		return nil
+	}
+	bounds := img.Bounds()
+	width := bounds.Dx()
+	height := bounds.Dy()
+	// 保证宽度为8的倍数
+	if width%8 != 0 {
+		width = (width/8 + 1) * 8
+	}
+	content := make([]byte, height*width/8)
+
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			byteIndex := y*(width/8) + x/8
+			bitIndex := 7 - (x % 8)
+			var isBlack bool
+			if x < bounds.Dx() {
+				r, g, b, _ := img.At(bounds.Min.X+x, bounds.Min.Y+y).RGBA()
+				// 计算灰度值，范围0-65535，低于阈值视为黑色
+				gray := (r*299 + g*587 + b*114) / 1000
+				isBlack = gray < 32768 // 阈值可调整，32768约等于128
+			} else {
+				isBlack = false // 超出原图部分补白
+			}
+			if isBlack {
+				content[byteIndex] |= 1 << bitIndex
+			}
+		}
+	}
+
+	return &RasterImage{
+		Width:   width,
+		Height:  height,
+		Align:   "center", // 默认居中对齐
+		Content: content,
+	}
+}
+
 func LowHighValue(value int) (low, high byte) {
 	// 计算低位和高位字节
 	low = byte(value & 0xFF)
