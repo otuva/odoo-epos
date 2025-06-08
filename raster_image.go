@@ -574,17 +574,19 @@ func (img *RasterImage) String() string {
 }
 
 func (img *RasterImage) ColorModel() color.Model {
-	// 返回黑白图像的颜色模型
+	// 返回黑白二值图像的颜色模型
 	return color.Palette{color.White, color.Black}
 }
+
 func (img *RasterImage) Bounds() image.Rectangle {
 	// 返回图像的边界矩形
 	return image.Rect(0, 0, img.Width, img.Height)
 }
+
 func (img *RasterImage) At(x, y int) color.Color {
 	// 检查坐标是否在图像范围内
 	if x < 0 || x >= img.Width || y < 0 || y >= img.Height {
-		return color.Transparent // 超出范围返回透明色
+		return color.White
 	}
 	// 计算像素所在的字节和位
 	byteIndex := (y * img.Width / 8) + (x / 8)

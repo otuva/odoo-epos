@@ -8,6 +8,11 @@ import (
 	"image/color"
 	"image/png"
 	"net/http"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"time"
 )
 
 func ePrintPNGhandler(w http.ResponseWriter, r *http.Request) {
@@ -192,4 +197,95 @@ func addError(val uint8, err int16) color.Gray {
 		v = 255
 	}
 	return color.Gray{Y: uint8(v)}
+}
+
+func ePrintLocalPNGhandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, `{"success":false,"msg":"Method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+	var printerName, filePath string
+	printerName = r.URL.Query().Get("printer")
+	filePath = r.URL.Query().Get("path")
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	// 检查printerName和filePath参数是否存在
+	if printerName == "" || filePath == "" {
+		http.Error(w, `{"success":false,"msg":"Missing printer or dir parameter"}`, http.StatusBadRequest)
+		return
+	}
+
+	// 读取filePath文件夹下的所有png文件
+	files, err := ReadPNGFilesFromPath(filePath)
+	if err != nil || len(files) == 0 {
+		http.Error(w, `{"success":false,"msg":"Failed to read PNG files: `+err.Error()+`"}`, http.StatusInternalServerError)
+		return
+	}
+
+	printer, ok := Printers[printerName]
+	if !ok {
+		http.Error(w, `{"success":false,"msg":"Printer not found"}`, http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	// 逐个打印文件
+	fmt.Fprintf(w, `<h1><pre>Starting to print %d files from %s</pre></h1>`, len(files), filePath)
+	flusher, _ := w.(http.Flusher)
+	for _, file := range files {
+		select {
+		case <-r.Context().Done():
+			// 客户端已断开连接，提前结束
+			return
+		default:
+			fmt.Fprintf(w, `<pre>{"success":true,"msg":"Printing file %s"}</pre>`, file)
+			if flusher != nil {
+				flusher.Flush() // 确保及时发送响应到客户端
+			}
+		}
+		time.Sleep(2 * time.Second) // 模拟打印延时，实际打印时可以去掉
+		pngFile, err := os.Open(file)
+		if err != nil {
+			fmt.Fprintf(w, `<pre style="color:red;">{"success":false,"msg":"Failed to open file %s: %s"}</pre>`, file, err.Error())
+			continue // 如果打开某个文件失败，跳过该文件
+		}
+		defer pngFile.Close()
+		pngImg, err := png.Decode(pngFile)
+		if err != nil {
+			fmt.Fprintf(w, `<pre style="color:red;">{"success":false,"msg":"Failed to decode PNG file %s: %s"</pre>}`, file, err.Error())
+			continue // 如果解码某个文件失败，跳过该文件
+		}
+		img := NewRasterImageFromPNG(pngImg)
+		err = printer.PrintRasterImage(img)
+		if err != nil {
+			fmt.Fprintf(w, `<pre style="color:red;">{"success":false,"msg":"Failed to print file %s: %s"}</pre>`, file, err.Error())
+			continue // 如果打印某个文件失败，跳过该文件
+		}
+		fmt.Fprintf(w, `<pre style="color:green;">{"success":true,"msg":"File %s printed successfully "}</pre>`, file)
+		// 刷新响应，确保每个文件打印后客户端能及时接收到响应
+		if flusher != nil {
+			flusher.Flush()
+		}
+	}
+	w.Write([]byte(`<h1 style="color:blue;"><pre>Print Complete</pre></h1>`))
+}
+
+// ReadPNGFilesFromPath 读取指定路径下的所有PNG文件，并返回文件路径列表
+func ReadPNGFilesFromPath(path string) ([]string, error) {
+	var pngFiles []string
+	err := filepath.Walk(path, func(fp string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && strings.HasSuffix(strings.ToLower(info.Name()), ".png") {
+			pngFiles = append(pngFiles, fp)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	// 按文件名排序
+	sort.Strings(pngFiles)
+	return pngFiles, nil
 }
