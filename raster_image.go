@@ -507,6 +507,56 @@ func (img *RasterImage) WithErase(x, y, width, height int) *RasterImage {
 	}
 }
 
+// WithBorder 返回添加边框后的图像
+// borderWidth: 边框的宽度（单位为像素）
+// 如果图像无效（如宽度或高度小于等于0，或内容为nil），则返回原图像
+// 如果边框宽度小于等于0，则返回原图像
+// 添加边框后，图像的宽度和高度保持不变
+// 注意：边框会覆盖原图像的内容，原图像的内容将被边框覆盖
+func (img *RasterImage) WithBorder(borderWidth int) *RasterImage {
+	// 检查参数有效性
+	if img == nil || img.Width <= 0 || img.Height <= 0 || img.Content == nil || borderWidth <= 0 {
+		return img
+	}
+
+	newContent := make([]byte, len(img.Content))
+	copy(newContent, img.Content)
+	width := img.Width
+	height := img.Height
+	widthBytes := width / 8
+
+	// 上下边框
+	for row := 0; row < borderWidth; row++ {
+		rowStart := row * widthBytes
+		for i := 0; i < widthBytes; i++ {
+			newContent[rowStart+i] = 0xFF // 全黑
+		}
+		rowStart = (height - 1 - row) * widthBytes
+		for i := 0; i < widthBytes; i++ {
+			newContent[rowStart+i] = 0xFF // 全黑
+		}
+	}
+	// 左右边框
+	for row := borderWidth; row < height-borderWidth; row++ {
+		rowStart := row * widthBytes
+		for col := 0; col < borderWidth; col++ {
+			byteIdx := rowStart + col/8
+			bitIdx := 7 - (col % 8)
+			newContent[byteIdx] |= 1 << bitIdx // 左边
+			byteIdx = rowStart + (width-1-col)/8
+			bitIdx = 7 - ((width - 1 - col) % 8)
+			newContent[byteIdx] |= 1 << bitIdx // 右边
+		}
+	}
+
+	return &RasterImage{
+		Width:   img.Width,
+		Height:  img.Height,
+		Align:   img.Align,
+		Content: newContent,
+	}
+}
+
 // String 返回RasterImage的字符串表示
 // 包含宽度、高度、对齐方式和内容长度
 // 如果图像为nil，则返回"RasterImage(nil)"
@@ -521,4 +571,26 @@ func (img *RasterImage) String() string {
 	}
 	return fmt.Sprintf("RasterImage(Width: %d, Height: %d, Align: %s, Content Length: %d)",
 		img.Width, img.Height, img.Align, len(img.Content))
+}
+
+func (img *RasterImage) ColorModel() color.Model {
+	// 返回黑白图像的颜色模型
+	return color.Palette{color.White, color.Black}
+}
+func (img *RasterImage) Bounds() image.Rectangle {
+	// 返回图像的边界矩形
+	return image.Rect(0, 0, img.Width, img.Height)
+}
+func (img *RasterImage) At(x, y int) color.Color {
+	// 检查坐标是否在图像范围内
+	if x < 0 || x >= img.Width || y < 0 || y >= img.Height {
+		return color.Transparent // 超出范围返回透明色
+	}
+	// 计算像素所在的字节和位
+	byteIndex := (y * img.Width / 8) + (x / 8)
+	bitIndex := 7 - (x % 8)
+	if img.Content[byteIndex]&(1<<bitIndex) != 0 {
+		return color.Black // 黑色像素
+	}
+	return color.White // 白色像素
 }
