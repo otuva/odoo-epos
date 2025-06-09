@@ -7,6 +7,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"math/bits"
 	"os"
 	"strconv"
 	"strings"
@@ -595,4 +596,153 @@ func (img *RasterImage) At(x, y int) color.Color {
 		return color.Black // 黑色像素
 	}
 	return color.White // 白色像素
+}
+
+// GetPixel 返回指定坐标的像素值
+// x, y: 像素的坐标
+// 返回值：1表示黑色像素，0表示白色像素
+// 如果坐标超出图像范围，则返回0（白色）
+// 注意：坐标从左上角开始，x为水平坐标，y为垂直坐标
+func (img *RasterImage) GetPixel(x, y int) int {
+	// 支持负数索引
+	if x < 0 {
+		x = img.Width + x
+	}
+	if y < 0 {
+		y = img.Height + y
+	}
+	// 检查坐标是否在图像范围内
+	if x < 0 || x >= img.Width || y < 0 || y >= img.Height {
+		return 0 // 超出范围，返回白色（0）
+	}
+	// 计算像素所在的字节和位
+	byteIndex := (y * img.Width / 8) + (x / 8)
+	bitIndex := 7 - (x % 8)
+	if img.Content[byteIndex]&(1<<bitIndex) != 0 {
+		return 1 // 黑色像素
+	}
+	return 0 // 白色像素
+}
+
+// SetPixel 设置指定坐标的像素值
+// x, y: 像素的坐标
+// value: 像素值，1表示黑色，0表示白色
+// 如果坐标超出图像范围，则不做任何操作
+func (img *RasterImage) setPixel(x, y, value int) {
+	// 支持负数索引
+	if x < 0 {
+		x = img.Width + x
+	}
+	if y < 0 {
+		y = img.Height + y
+	}
+	// 检查坐标是否在图像范围内
+	if x < 0 || x >= img.Width || y < 0 || y >= img.Height {
+		return // 超出范围，不做任何操作
+	}
+	// 计算像素所在的字节和位
+	byteIndex := (y * img.Width / 8) + (x / 8)
+	bitIndex := 7 - (x % 8)
+	if value == 1 {
+		img.Content[byteIndex] |= (1 << bitIndex) // 设置为黑色
+	} else {
+		img.Content[byteIndex] &^= (1 << bitIndex) // 设置为白色
+	}
+}
+
+// SetPixel 设置指定坐标的像素为白色
+func (img *RasterImage) SetPixelWhite(x, y int) {
+	img.setPixel(x, y, 0) // 设置为白色
+}
+
+// SetPixel 设置指定坐标的像素为黑色
+func (img *RasterImage) SetPixelBlack(x, y int) {
+	img.setPixel(x, y, 1) // 设置为黑色
+}
+
+// IsAllBlack 检查图像是否全黑
+// 如果图像为nil或内容为nil，则返回false
+// 如果图像的内容全部为0xFF（全黑），则返回true
+// 否则返回false
+// 注意：全黑的定义是所有字节都为0xFF，即每个像素都是黑色
+func (img *RasterImage) IsAllBlack() bool {
+	if img == nil || img.Content == nil {
+		return false
+	}
+	for _, b := range img.Content {
+		if b != 0xFF { // 如果有任何字节不是全黑，则返回false
+			return false
+		}
+	}
+	return true // 所有字节都是全黑
+}
+
+// IsAllWhite 检查图像是否全白
+// 如果图像为nil或内容为nil，则返回false
+// 如果图像的内容全部为0x00（全白），则返回true
+// 否则返回false
+// 注意：全白的定义是所有字节都为0x00，即每个像素都是白色
+func (img *RasterImage) IsAllWhite() bool {
+	if img == nil || img.Content == nil {
+		return false
+	}
+	for _, b := range img.Content {
+		if b != 0x00 { // 如果有任何字节不是全白，则返回false
+			return false
+		}
+	}
+	return true // 所有字节都是全白
+}
+
+// IsWhiteBoarder 检查图像是否有白色边框
+// 如果图像为nil或内容为nil，则返回false
+func (img *RasterImage) IsWhiteBoarder() bool {
+	// 检查图像是否为nil或内容为nil
+	if img == nil || img.Content == nil {
+		return false
+	}
+	// 检查上边框
+	for x := 0; x < img.Width; x++ {
+		if img.GetPixel(x, 0) != 0 { // 如果有任何像素不是白色，则返回false
+			return false
+		}
+	}
+	// 检查下边框
+	for x := 0; x < img.Width; x++ {
+		if img.GetPixel(x, img.Height-1) != 0 { // 如果有任何像素不是白色，则返回false
+			return false
+		}
+	}
+	// 检查左边框
+	for y := 0; y < img.Height; y++ {
+		if img.GetPixel(0, y) != 0 { // 如果有任何像素不是白色，则返回false
+			return false
+		}
+	}
+	// 检查右边框
+	for y := 0; y < img.Height; y++ {
+		if img.GetPixel(img.Width-1, y) != 0 { // 如果有任何像素不是白色，则返回false
+			return false
+		}
+	}
+	return true // 所有边框都是白色的
+}
+
+// BlackRatio 返回图像中黑色像素的比例
+// 如果图像为nil或内容为nil，则返回0
+// 计算黑色像素数与总像素数的比例
+// 黑色像素数是指内容中每个字节中1的个数
+// 总像素数是图像宽度*高度
+// 返回值范围在0到1之间，0表示全白，1表示全黑
+func (img *RasterImage) BlackRatio() float64 {
+	if img == nil || img.Content == nil {
+		return 0 // 无效图像
+	}
+	blackCount := 0
+	totalCount := len(img.Content) * 8 // 每个字节8位
+	for _, b := range img.Content {
+		blackCount += bits.OnesCount8(b) // 统计每个字节中的黑色像素数
+	}
+	ratio := float64(blackCount) / float64(totalCount)
+	return ratio
 }
