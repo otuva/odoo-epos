@@ -694,9 +694,9 @@ func (img *RasterImage) IsAllWhite() bool {
 	return true // 所有字节都是全白
 }
 
-// IsWhiteBoarder 检查图像是否有白色边框
+// IsWhiteBorder 检查图像是否有白色边框
 // 如果图像为nil或内容为nil，则返回false
-func (img *RasterImage) IsWhiteBoarder() bool {
+func (img *RasterImage) IsWhiteBorder() bool {
 	// 检查图像是否为nil或内容为nil
 	if img == nil || img.Content == nil {
 		return false
