@@ -746,3 +746,106 @@ func (img *RasterImage) BlackRatio() float64 {
 	ratio := float64(blackCount) / float64(totalCount)
 	return ratio
 }
+
+// IsSingelTextLine 检查图像是否为单行文本
+// 如果图像为nil或内容为nil，或高度或宽度小于等于0，则返回false
+// 检查图像的顶部和底部是否有非全白的行
+// 如果顶部和底部之间有非全白的行，则返回true
+// 如果顶部和底部之间没有非全白的行，则返回false
+// 注意：单行文本的定义是图像中只有一行非全白的内容
+func (img *RasterImage) IsSingleTextLine() bool {
+	if img == nil || img.Content == nil || img.Height <= 0 || img.Width <= 0 {
+		return false // 无效图像
+	}
+	top := 0
+	bottom := img.Height - 1
+
+	// 找到第一个非全白的行
+	for top < img.Height && img.IsWhiteLine(top) {
+		top++
+	}
+	// 找到最后一个非全白的行
+	for bottom >= top && img.IsWhiteLine(bottom) {
+		bottom--
+	}
+	// 检查是否有内容
+	if top > bottom {
+		return false
+	}
+	// 检查中间每一行都不是全白
+	for y := top; y <= bottom; y++ {
+		if img.IsWhiteLine(y) {
+			return false
+		}
+	}
+	return true
+}
+
+// IsWhiteLine 检查指定行是否全是白色
+// y: 行索引，从0开始
+func (img *RasterImage) IsWhiteLine(y int) bool {
+	if img == nil || img.Content == nil || y < 0 || y >= img.Height {
+		return false // 无效图像或行索引
+	}
+	for x := 0; x < img.Width; x++ {
+		if img.GetPixel(x, y) != 0 { // 如果有任何像素不是白色，则返回false
+			return false
+		}
+	}
+	return true // 所有像素都是白色的
+}
+
+// IsWhiteColumn 检查指定列是否全是白色
+// x: 列索引，从0开始
+func (img *RasterImage) IsWhiteColumn(x int) bool {
+	if img == nil || img.Content == nil || x < 0 || x >= img.Width {
+		return false // 无效图像或列索引
+	}
+	for y := 0; y < img.Height; y++ {
+		if img.GetPixel(x, y) != 0 { // 如果有任何像素不是白色，则返回false
+			return false
+		}
+	}
+	return true // 所有像素都是白色的
+}
+
+// CutCharacters 切割图像中的字符
+// 将图像按行切割成多个字符图像
+// 返回一个包含所有切割后字符图像的切片
+func (img *RasterImage) CutCharacters() []*RasterImage {
+	if img == nil || img.Content == nil || img.Height <= 0 || img.Width <= 0 {
+		return nil // 无效图像
+	}
+	if !img.IsSingleTextLine() {
+		return nil // 不是单行文本，无法切割
+	}
+
+	var characters []*RasterImage
+	width := img.Width
+	height := img.Height
+	start := -1
+	for x := 0; x < width; x++ {
+		if img.IsWhiteColumn(x) {
+			if start != -1 {
+				// 字符结束，裁剪[start, x)
+				charImg := img.WithCrop(start, 0, x-start, height)
+				if charImg != nil {
+					characters = append(characters, charImg)
+				}
+				start = -1
+			}
+		} else {
+			if start == -1 {
+				start = x // 字符开始
+			}
+		}
+	}
+	// 处理最后一个字符
+	if start != -1 && start < width {
+		charImg := img.WithCrop(start, 0, width-start, height)
+		if charImg != nil {
+			characters = append(characters, charImg)
+		}
+	}
+	return characters
+}
