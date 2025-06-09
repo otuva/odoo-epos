@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -128,17 +130,46 @@ func ePrintRAWhandler(w http.ResponseWriter, r *http.Request) {
 
 // DownloadPngImage 从指定URL下载PNG图片并解码为image.Image
 func DownloadPNGImage(url string) (image.Image, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to download png: status %d", resp.StatusCode)
-	}
-	img, err := png.Decode(resp.Body)
-	if err != nil {
-		return nil, err
+	var img image.Image
+	if strings.HasPrefix(url, "file:") {
+		// 处理本地文件路径
+		filePath := strings.TrimPrefix(url, "file:")
+		file, err := os.Open(filePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open local file: %w", err)
+		}
+		defer file.Close()
+		img, err = png.Decode(file)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode local PNG file: %w", err)
+		}
+		return img, nil
+	} else if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
+		resp, err := http.Get(url)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("failed to download png: status %d", resp.StatusCode)
+		}
+		img, err = png.Decode(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+	} else if strings.HasPrefix(url, "data:image/png;base64,") {
+		// 处理Base64编码的PNG数据
+		base64Data := strings.TrimPrefix(url, "data:image/png;base64,")
+		data, err := base64.StdEncoding.DecodeString(base64Data)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode base64 PNG data: %w", err)
+		}
+		img, err = png.Decode(bytes.NewReader(data))
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode PNG data: %w", err)
+		}
+	} else {
+		return nil, fmt.Errorf("unsupported URL scheme: %s", url)
 	}
 	return img, nil
 }
