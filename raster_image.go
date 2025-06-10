@@ -809,42 +809,70 @@ func (img *RasterImage) IsWhiteColumn(x int) bool {
 	return true // 所有像素都是白色的
 }
 
-// CutCharacters 切割图像中的字符
-// 将图像按行切割成多个字符图像
-// 返回一个包含所有切割后字符图像的切片
+// CutCharactersByConnectivity 基于连通域分析切割字符
 func (img *RasterImage) CutCharacters() []*RasterImage {
 	if img == nil || img.Content == nil || img.Height <= 0 || img.Width <= 0 {
 		return nil // 无效图像
 	}
-	if !img.IsSingleTextLine() {
-		return nil // 不是单行文本，无法切割
+	width, height := img.Width, img.Height
+	labels := make([][]int, height)
+	for i := range labels {
+		labels[i] = make([]int, width)
 	}
+	label := 1
+	type charRect struct{ minX, minY, maxX, maxY int }
+	regions := map[int]*charRect{}
 
-	var characters []*RasterImage
-	width := img.Width
-	height := img.Height
-	start := -1
-	for x := 0; x < width; x++ {
-		if img.IsWhiteColumn(x) {
-			if start != -1 {
-				// 字符结束，裁剪[start, x)
-				charImg := img.WithCrop(start, 0, x-start, height)
-				if charImg != nil {
-					characters = append(characters, charImg)
+	// 8连通方向
+	dirs := [][2]int{{0, 1}, {1, 0}, {0, -1}, {-1, 0}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}}
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			if img.GetPixel(x, y) == 1 && labels[y][x] == 0 {
+				// 新连通域
+				queue := [][2]int{{x, y}}
+				labels[y][x] = label
+				r := &charRect{minX: x, minY: y, maxX: x, maxY: y}
+				for len(queue) > 0 {
+					cx, cy := queue[0][0], queue[0][1]
+					queue = queue[1:]
+					for _, d := range dirs {
+						nx, ny := cx+d[0], cy+d[1]
+						if nx >= 0 && nx < width && ny >= 0 && ny < height &&
+							img.GetPixel(nx, ny) == 1 && labels[ny][nx] == 0 {
+							labels[ny][nx] = label
+							queue = append(queue, [2]int{nx, ny})
+							// 更新外接矩形
+							if nx < r.minX {
+								r.minX = nx
+							}
+							if nx > r.maxX {
+								r.maxX = nx
+							}
+							if ny < r.minY {
+								r.minY = ny
+							}
+							if ny > r.maxY {
+								r.maxY = ny
+							}
+						}
+					}
 				}
-				start = -1
-			}
-		} else {
-			if start == -1 {
-				start = x // 字符开始
+				regions[label] = r
+				label++
 			}
 		}
 	}
-	// 处理最后一个字符
-	if start != -1 && start < width {
-		charImg := img.WithCrop(start, 0, width-start, height)
-		if charImg != nil {
-			characters = append(characters, charImg)
+
+	// 提取每个连通域的外接矩形
+	var characters []*RasterImage
+	for _, r := range regions {
+		w := r.maxX - r.minX + 1
+		h := r.maxY - r.minY + 1
+		if w > 0 && h > 0 {
+			charImg := img.WithCrop(r.minX, r.minY, w, h)
+			if charImg != nil {
+				characters = append(characters, charImg)
+			}
 		}
 	}
 	return characters
