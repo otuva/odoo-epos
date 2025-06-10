@@ -1,16 +1,17 @@
 package main
 
-import "image"
+import (
+	"image"
+)
 
 type RasterPattern struct {
-	NearBottom    bool          // 是否从底部开始搜索
-	Width         int           // 图像宽度
-	Height        int           // 图像高度
-	IsWhiteBorder bool          // 是否有白色边框
-	BlackPixels   []image.Point // 黑色像素点的索引列表
-	WhitePixels   []image.Point // 白色像素点的索引列表
-	BlackRatio    float64       // 黑色像素点占比
-	WhiteRatio    float64       // 白色像素点占比
+	NearBottom  bool          // 是否从底部开始搜索
+	Width       int           // 图像宽度
+	Height      int           // 图像高度
+	borderWidth int           // 边框宽度
+	BlackPixels []image.Point // 黑色像素点的索引列表
+	WhitePixels []image.Point // 白色像素点的索引列表
+	BlackRatio  float64       // 黑色像素点占比，正数表示上限，0表示不限制，负数表示下限
 }
 
 func (p *RasterPattern) AddBlackPixel(x, y int) {
@@ -98,24 +99,18 @@ func (p *RasterPattern) IsMatchAt(img *RasterImage, offsetX, offsetY int) bool {
 	if offsetX+p.Width > img.Width || offsetY+p.Height > img.Height {
 		return false
 	}
-	// 白色边框判断
-	if p.IsWhiteBorder {
-		// 上下边
-		for x := 0; x < p.Width; x++ {
-			if img.GetPixel(offsetX+x, offsetY) != 0 { // 上
-				return false
-			}
-			if img.GetPixel(offsetX+x, offsetY+p.Height-1) != 0 { // 下
-				return false
-			}
-		}
-		// 左右边
-		for y := 1; y < p.Height-1; y++ {
-			if img.GetPixel(offsetX, offsetY+y) != 0 { // 左
-				return false
-			}
-			if img.GetPixel(offsetX+p.Width-1, offsetY+y) != 0 { // 右
-				return false
+
+	if p.borderWidth > 0 {
+		// 取 (0,0) 位置的颜色作为边框颜色
+		borderColor := img.GetPixel(offsetX, offsetY)
+		// 检查边框区域颜色是否一致
+		for y := 0; y < p.Height; y++ {
+			for x := 0; x < p.Width; x++ {
+				if x < p.borderWidth || x >= p.Width-p.borderWidth || y < p.borderWidth || y >= p.Height-p.borderWidth {
+					if img.GetPixel(offsetX+x, offsetY+y) != borderColor {
+						return false
+					}
+				}
 			}
 		}
 	}
@@ -136,33 +131,30 @@ func (p *RasterPattern) IsMatchAt(img *RasterImage, offsetX, offsetY int) bool {
 		}
 	}
 
-	// 黑白比例判断
-	if p.WhiteRatio > 0 || p.BlackRatio > 0 {
+	// 黑色像素比例判断
+	if p.BlackRatio != 0 {
 		blackCount := 0
 		total := p.Width * p.Height
-		maxBlack := int(float64(total) * (1 - p.WhiteRatio))
-		minBlack := int(float64(total) * p.BlackRatio)
-		remain := total
 
 		for y := 0; y < p.Height; y++ {
 			for x := 0; x < p.Width; x++ {
-				remain--
 				if img.GetPixel(offsetX+x, offsetY+y) == 1 {
 					blackCount++
-					if blackCount > maxBlack {
-						return false // 黑色像素太多，提前终止
-					}
-				}
-				// 如果剩余像素全是黑色也不够 minBlack，提前终止
-				if blackCount+remain < minBlack {
-					return false // 黑色像素太少，提前终止
 				}
 			}
 		}
 		blackRatio := float64(blackCount) / float64(total)
-		whiteRatio := 1 - blackRatio
-		if blackRatio < p.BlackRatio || whiteRatio < p.WhiteRatio {
-			return false
+
+		if p.BlackRatio > 0 {
+			// 正数表示上限
+			if blackRatio > p.BlackRatio {
+				return false
+			}
+		} else {
+			// 负数表示下限
+			if blackRatio < -p.BlackRatio {
+				return false
+			}
 		}
 	}
 
