@@ -75,8 +75,8 @@ func (p *TCPPrinter) PrintRasterImage(img *raster.RasterImage) error {
 	}
 	defer p.Close()
 	img = p.transformer.Transform(img) // 使用转换器转换图像
-	marginLeft := img.AutoLeftMargin(p.paperWidth)
-	img.AddMargin(marginLeft, p.marginBottom)
+	img.AutoMarginLeft(p.paperWidth)
+	img.AddMarginBottom(p.marginBottom)
 	if _, err := p.fd.Write(img.ToEscPosRasterCommand(1024)); err != nil {
 		return err
 	}
