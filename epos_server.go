@@ -11,6 +11,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/xiaohao0576/odoo-epos/raster"
 )
 
 const (
@@ -73,7 +75,7 @@ func ePOShandler(w http.ResponseWriter, r *http.Request) {
 
 	// 优先检查是否为打印图片请求
 	if strings.Contains(string(body), EPOS_IMAGE) {
-		img, err := NewRasterImageFromXML(body)
+		img, err := raster.NewRasterImageFromXML(body)
 		if err != nil {
 			http.Error(w, "Failed to parse image data", http.StatusInternalServerError)
 			fmt.Println("Failed to parse image data:", err)

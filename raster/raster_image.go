@@ -1,4 +1,4 @@
-package main
+package raster
 
 import (
 	"encoding/base64"

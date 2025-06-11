@@ -15,6 +15,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/xiaohao0576/odoo-epos/raster"
 )
 
 func ePrintPNGhandler(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +64,7 @@ func ePrintPNGhandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"success":false,"msg":"Failed to download PNG image: `+err.Error()+`"}`, http.StatusInternalServerError)
 		return
 	}
-	img := NewRasterImageFromPNG(pngImg)
+	img := raster.NewRasterImageFromPNG(pngImg)
 	if img == nil {
 		http.Error(w, `{"success":false,"msg":"Failed to create raster image from PNG"}`, http.StatusInternalServerError)
 		return
@@ -286,7 +288,7 @@ func ePrintLocalPNGhandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, `<pre style="color:red;">{"success":false,"msg":"Failed to decode PNG file %s: %s"</pre>}`, file, err.Error())
 			continue // 如果解码某个文件失败，跳过该文件
 		}
-		img := NewRasterImageFromPNG(pngImg)
+		img := raster.NewRasterImageFromPNG(pngImg)
 		err = printer.PrintRasterImage(img)
 		if err != nil {
 			fmt.Fprintf(w, `<pre style="color:red;">{"success":false,"msg":"Failed to print file %s: %s"}</pre>`, file, err.Error())

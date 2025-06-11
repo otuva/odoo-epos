@@ -2,13 +2,15 @@ package main
 
 import (
 	"flag"
+
+	eprinter "github.com/xiaohao0576/odoo-epos/printer"
 )
 
 var (
-	Version    = "1.0.1"
-	Printers   = make(map[string]EPrinter)
+	Version    = "1.0.2"
 	Port       *string
 	ConfigFile *string
+	Printers   eprinter.Printers
 )
 
 func init() {
@@ -18,6 +20,6 @@ func init() {
 }
 
 func main() {
-	LoadPrintersConfig(*ConfigFile)
+	Printers, _ = eprinter.LoadPrinters(*ConfigFile)
 	StartHttpServer()
 }

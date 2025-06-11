@@ -1,14 +1,17 @@
-package main
+package printer
 
 import (
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/xiaohao0576/odoo-epos/raster"
+	"github.com/xiaohao0576/odoo-epos/transformer"
 )
 
 type FilePrinter struct {
-	dir         string            // 文件保存目录
-	transformer RasterTransformer // 用于转换图像的转换器
+	dir         string                        // 文件保存目录
+	transformer transformer.RasterTransformer // 用于转换图像的转换器
 }
 
 func (p FilePrinter) String() string {
@@ -18,7 +21,7 @@ func (p FilePrinter) String() string {
 func (p FilePrinter) OpenCashBox() error {
 	return nil // 文件打印机不支持打开钱箱
 }
-func (p FilePrinter) PrintRasterImage(img *RasterImage) error {
+func (p FilePrinter) PrintRasterImage(img *raster.RasterImage) error {
 	filename := fmt.Sprintf("%s/%s.png", p.dir, time.Now().Format("20060102-150405"))
 	return img.SaveToPngFile(filename)
 }
