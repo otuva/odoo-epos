@@ -4,8 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 
 	"github.com/xiaohao0576/odoo-epos/raster"
@@ -95,15 +93,6 @@ func (c *ConfigPrinter) NewPrinter() EPrinter {
 // 读取并解析 config.json 到 Printers
 func LoadPrinters(filename string) (Printers, error) {
 	var printers Printers = make(map[string]EPrinter)
-	if fileNotExists(filename) {
-		fmt.Println("config file not exist, downloading...")
-		const configFileUrl = "https://d2ctjms1d0nxe6.cloudfront.net/cert/config.json"
-		err := DownloadFile(configFileUrl, filename)
-		if err != nil {
-			fmt.Println("Failed to download config file:", err)
-			return nil, err
-		}
-	}
 	file, err := os.Open(filename)
 	if err != nil {
 		fmt.Printf("Error opening config file: %v\n", err)
@@ -130,34 +119,4 @@ func LoadPrinters(filename string) (Printers, error) {
 		return nil, fmt.Errorf("no printers configured or all failed to open")
 	}
 	return printers, nil
-}
-
-func fileNotExists(filename string) bool {
-	_, err := os.Stat(filename)
-	return os.IsNotExist(err)
-}
-
-func DownloadFile(url, filepath string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return fmt.Errorf("failed to download file: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to download file: status code %d", resp.StatusCode)
-	}
-
-	out, err := os.Create(filepath)
-	if err != nil {
-		return fmt.Errorf("failed to create file: %w", err)
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to write file: %w", err)
-	}
-
-	return nil
 }
