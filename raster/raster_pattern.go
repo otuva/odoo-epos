@@ -22,32 +22,53 @@ func (p *RasterPattern) AddWhitePixel(x, y int) {
 	p.WhitePixels = append(p.WhitePixels, image.Point{X: x, Y: y})
 }
 
-// CropImage 在图像中裁剪出匹配的图案
-func (p *RasterPattern) CropPatternImage(img *RasterImage) *RasterImage {
-	x, y := p.Search(img)
+// WithCropImage 在图像中裁剪出匹配的图案
+func (img *RasterImage) WithCropPattern(pattern *RasterPattern) *RasterImage {
+	x, y := img.SearchPattern(pattern)
 	if x < 0 || y < 0 {
 		return nil // 未找到匹配的图案，返回 nil
 	}
 	// 裁剪图像
-	return img.WithCrop(x, y, p.Width, p.Height)
+	return img.WithCrop(x, y, pattern.Width, pattern.Height)
+}
+
+// WithErasePattern 返回擦除指定图案后的图像
+// pattern: 要擦除的图案
+// 如果图案无效（如宽度或高度小于等于0），则返回原图像
+func (img *RasterImage) WithErasePattern(pattern *RasterPattern) *RasterImage {
+	x, y := img.SearchPattern(pattern)
+	if x < 0 || y < 0 {
+		return img // 未找到匹配的图案，返回 nil
+	}
+	// 擦除区域
+	return img.WithErase(x, y, pattern.Width, pattern.Height)
+}
+
+func (img *RasterImage) WithDeletePatternRows(pattern *RasterPattern) *RasterImage {
+	x, y := img.SearchPattern(pattern)
+	if x < 0 || y < 0 {
+		return img // 未找到匹配的图案，返回原图像
+	}
+	// 删除匹配图案所在的行
+	return img.WithDeleteRows(y, y+pattern.Height)
 }
 
 // Search 在图像中搜索匹配的图案
 // 根据 SearchDirection 的值决定从顶部还是底部开始搜索
-func (p *RasterPattern) Search(img *RasterImage) (int, int) {
-	if p.Width <= 0 {
-		p.Width = img.Width
+func (img *RasterImage) SearchPattern(pattern *RasterPattern) (int, int) {
+	if pattern.Width <= 0 {
+		pattern.Width = img.Width
 	}
-	if p.Height <= 0 {
-		p.Height = img.Height
+	if pattern.Height <= 0 {
+		pattern.Height = img.Height
 	}
-	if img == nil || img.Width < p.Width || img.Height < p.Height {
+	if img == nil || img.Width < pattern.Width || img.Height < pattern.Height {
 		return -1, -1
 	}
-	if p.NearBottom {
-		return p.SearchFromBottom(img) // 如果指定了从底部开始搜索，调用 SearchFromBottom
+	if pattern.NearBottom {
+		return pattern.SearchFromBottom(img) // 如果指定了从底部开始搜索，调用 SearchFromBottom
 	}
-	return p.SearchFromTop(img) // 否则从顶部开始搜索
+	return pattern.SearchFromTop(img) // 否则从顶部开始搜索
 }
 
 // SearchFromTop 从图像的左上角开始裁剪，逐行逐列检查，直到找到匹配的图案

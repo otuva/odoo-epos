@@ -556,18 +556,6 @@ func (img *RasterImage) WithErase(x, y, width, height int) *RasterImage {
 	}
 }
 
-// WithErasePattern 返回擦除指定图案后的图像
-// pattern: 要擦除的图案
-// 如果图案无效（如宽度或高度小于等于0），则返回原图像
-func (img *RasterImage) WithErasePattern(pattern *RasterPattern) *RasterImage {
-	x, y := pattern.Search(img)
-	if x < 0 || y < 0 {
-		return img // 未找到匹配的图案，返回 nil
-	}
-	// 擦除区域
-	return img.WithErase(x, y, pattern.Width, pattern.Height)
-}
-
 // WithBorder 返回添加边框后的图像
 // borderWidth: 边框的宽度（单位为像素）
 // 如果图像无效（如宽度或高度小于等于0，或内容为nil），则返回原图像
