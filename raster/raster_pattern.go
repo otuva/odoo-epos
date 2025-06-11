@@ -23,7 +23,7 @@ func (p *RasterPattern) AddWhitePixel(x, y int) {
 }
 
 // CropImage 在图像中裁剪出匹配的图案
-func (p *RasterPattern) CropImage(img *RasterImage) *RasterImage {
+func (p *RasterPattern) CropPatternImage(img *RasterImage) *RasterImage {
 	x, y := p.Search(img)
 	if x < 0 || y < 0 {
 		return nil // 未找到匹配的图案，返回 nil

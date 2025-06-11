@@ -371,6 +371,54 @@ func (img *RasterImage) WithCropRows(startRow, endRow int) *RasterImage {
 	}
 }
 
+// WithDeleteRows 返回删除指定行后的图像
+// startRow, endRow: 要删除的行范围（包含）
+// 如果删除范围超出原图范围，则返回原图像
+// 如果删除范围无效（如起始行大于结束行，或行数为0），也返回原图像
+func (img *RasterImage) WithDeleteRows(startRow, endRow int) *RasterImage {
+	if img == nil || img.Width <= 0 || img.Height <= 0 || img.Content == nil {
+		return nil
+	}
+	// 支持负数索引
+	if startRow < 0 {
+		startRow = img.Height + startRow
+	}
+	if endRow < 0 {
+		endRow = img.Height + endRow
+	}
+	if startRow < 0 {
+		startRow = 0
+	}
+	if endRow >= img.Height {
+		endRow = img.Height - 1
+	}
+	if startRow > endRow || startRow >= img.Height || endRow < 0 {
+		return img // 无需删除
+	}
+	widthBytes := img.Width / 8
+	newHeight := img.Height - (endRow - startRow + 1)
+	if newHeight <= 0 {
+		return nil // 全部删除
+	}
+	newContent := make([]byte, newHeight*widthBytes)
+	dstRow := 0
+	for row := 0; row < img.Height; row++ {
+		if row < startRow || row > endRow {
+			copy(
+				newContent[dstRow*widthBytes:(dstRow+1)*widthBytes],
+				img.Content[row*widthBytes:(row+1)*widthBytes],
+			)
+			dstRow++
+		}
+	}
+	return &RasterImage{
+		Width:   img.Width,
+		Height:  newHeight,
+		Align:   img.Align,
+		Content: newContent,
+	}
+}
+
 // WithAppend 返回拼接后的图像
 // other: 要拼接的另一个图像
 // 如果原图像或其他图像无效（如宽度或高度小于等于0，或内容为nil），则返回nil
@@ -506,6 +554,18 @@ func (img *RasterImage) WithErase(x, y, width, height int) *RasterImage {
 		Align:   img.Align,
 		Content: newContent,
 	}
+}
+
+// WithErasePattern 返回擦除指定图案后的图像
+// pattern: 要擦除的图案
+// 如果图案无效（如宽度或高度小于等于0），则返回原图像
+func (img *RasterImage) WithErasePattern(pattern *RasterPattern) *RasterImage {
+	x, y := pattern.Search(img)
+	if x < 0 || y < 0 {
+		return img // 未找到匹配的图案，返回 nil
+	}
+	// 擦除区域
+	return img.WithErase(x, y, pattern.Width, pattern.Height)
 }
 
 // WithBorder 返回添加边框后的图像

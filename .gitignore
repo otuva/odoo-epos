@@ -9,9 +9,6 @@ bin/
 
 linux/usr/local/odoo-epos/epos
 
-# Private transformers
-transformer_*.go
-
 # photos
 *.jpg
 *.jpeg
