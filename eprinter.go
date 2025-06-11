@@ -20,6 +20,7 @@ type ConfigPrinter struct {
 	MarginBottom      int    `json:"margin_bottom"`       // 下边距
 	CutCommnad        string `json:"cut_command"`         // 切纸命令
 	CashDrawerCommand string `json:"cash_drawer_command"` // 钱箱命令
+	Transformer       string `json:"transformer"`         // 图像转换器
 }
 
 func (c *ConfigPrinter) ToEPrinter() EPrinter {
@@ -41,6 +42,11 @@ func (c *ConfigPrinter) ToEPrinter() EPrinter {
 		cashDrawerCommand = []byte{0x1B, 0x70, 0x00, 0x19, 0xFA} // 默认钱箱命令
 	}
 
+	transformer, ok := Transformers[c.Transformer]
+	if !ok {
+		transformer = &IdentityTransformer{} // 使用默认转换器
+	}
+
 	switch c.Type {
 	case "usb":
 		return &USBPrinter{
@@ -49,6 +55,7 @@ func (c *ConfigPrinter) ToEPrinter() EPrinter {
 			filePath:          c.Address,         // USB打印机的文件路径
 			cutCommand:        cutCommand,        // 切纸命令
 			cashDrawerCommand: cashDrawerCommand, // 钱箱命令
+			transformer:       transformer,       // 图像转换器
 		}
 	case "tcp":
 		return &TCPPrinter{
@@ -57,6 +64,7 @@ func (c *ConfigPrinter) ToEPrinter() EPrinter {
 			HostPort:          c.Address,         // 打印机地址
 			cutCommand:        cutCommand,        // 切纸命令
 			cashDrawerCommand: cashDrawerCommand, // 钱箱命令
+			transformer:       transformer,       // 图像转换器
 		}
 	case "serial":
 		return &SerialPrinter{
@@ -65,9 +73,13 @@ func (c *ConfigPrinter) ToEPrinter() EPrinter {
 			serialConfig:      c.Address,         // 串口地址
 			cutCommand:        cutCommand,        // 切纸命令
 			cashDrawerCommand: cashDrawerCommand, // 钱箱命令
+			transformer:       transformer,       // 图像转换器
 		}
 	case "file":
-		return NewFilePrinter(c.Address) // 文件打印机
+		return &FilePrinter{
+			dir:         c.Address,   // 文件保存目录
+			transformer: transformer, // 图像转换器
+		}
 	default:
 		return nil // 未知类型
 	}

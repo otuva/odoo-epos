@@ -7,12 +7,13 @@ import (
 )
 
 type USBPrinter struct {
-	paperWidth        int      // 纸张宽度
-	marginBottom      int      // 下边距
-	cutCommand        []byte   // 切纸命令
-	cashDrawerCommand []byte   // 钱箱命令
-	filePath          string   // USB打印机的文件路径
-	fd                *os.File // 文件描述符
+	paperWidth        int               // 纸张宽度
+	marginBottom      int               // 下边距
+	cutCommand        []byte            // 切纸命令
+	cashDrawerCommand []byte            // 钱箱命令
+	filePath          string            // USB打印机的文件路径
+	fd                *os.File          // 文件描述符
+	transformer       RasterTransformer // 用于转换图像的转换器
 }
 
 func (p *USBPrinter) String() string {
@@ -47,7 +48,7 @@ func (p *USBPrinter) PrintRasterImage(img *RasterImage) error {
 	if err != nil {
 		return fmt.Errorf("failed to reset printer: %w", err)
 	}
-	// 发送图像数据
+	img = p.transformer.Transform(img) // 使用转换器转换图像
 	marginLeft := img.AutoLeftMargin(p.paperWidth)
 	img.AddMargin(marginLeft, p.marginBottom) // 添加边距
 	p.fd.Write(img.ToEscPosRasterCommand(1024))

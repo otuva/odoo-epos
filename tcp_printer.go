@@ -7,12 +7,13 @@ import (
 )
 
 type TCPPrinter struct {
-	paperWidth        int      // 纸张宽度
-	marginBottom      int      // 下边距
-	cutCommand        []byte   //切纸命令
-	cashDrawerCommand []byte   // 钱箱命令
-	HostPort          string   // 打印机地址
-	fd                net.Conn // 直接用 net.Conn
+	paperWidth        int         // 纸张宽度
+	marginBottom      int         // 下边距
+	cutCommand        []byte      //切纸命令
+	cashDrawerCommand []byte      // 钱箱命令
+	HostPort          string      // 打印机地址
+	fd                net.Conn    // 直接用 net.Conn
+	transformer       Transformer // 用于转换图像的转换器
 }
 
 func (p *TCPPrinter) String() string {
@@ -70,6 +71,7 @@ func (p *TCPPrinter) PrintRasterImage(img *RasterImage) error {
 		}
 	}
 	defer p.Close()
+	img = p.transformer.Transform(img) // 使用转换器转换图像
 	marginLeft := img.AutoLeftMargin(p.paperWidth)
 	img.AddMargin(marginLeft, p.marginBottom)
 	if _, err := p.fd.Write(img.ToEscPosRasterCommand(1024)); err != nil {
