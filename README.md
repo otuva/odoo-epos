@@ -8,6 +8,13 @@ env GOOS=windows GOARCH=amd64 go build -o epos.exe
 ```
 Then install epos.exe as a windows service by NSSM (https://nssm.cc/)
 
+## Compile program for Raspberry Pi
+```
+env GOOS=linux GOARCH=arm GOARM=7 go build -o epos-armv7
+
+> Note: The compiled 32-bit program (`GOARCH=arm GOARM=7`) can run on a 64-bit Raspberry Pi system as long as 32-bit compatibility is supported (most official Raspberry Pi OS versions support this by default).
+```
+
 ## Build deb package
 ```
 go build -o linux/usr/local/odoo-epos/epos .
