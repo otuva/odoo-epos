@@ -1,15 +1,30 @@
 {
-    "p0": {
-        "type": "file",
-        "address": "/tmp/pic"
+    "usb": {
+        "type": "usb",
+        "address": "/dev/xp-n160ii",
+        "paper_width": 576,
+        "margin_bottom": 120
+    },
+    "serial": {
+        "type": "serial",
+        "address": "COM1,baud=115200,databits=8,parity=N,stopbits=1",
+        "paper_width": 576,
+        "margin_bottom": 120
     },
     "p1": {
         "type": "tcp",
         "address": "192.168.123.101:9100"
     },
     "p2": {
-        "type": "usb",
-        "address": "/dev/xp-n160ii",
-        "margin_left": 16
+        "type": "tcp",
+        "address": "192.168.123.102:9100"
+    },
+    "p3": {
+        "type": "tcp",
+        "address": "192.168.123.103:9100"
+    },
+    "png": {
+        "type": "file",
+        "address": "/tmp/pic"
     }
 }

@@ -75,6 +75,15 @@ func (c *ConfigPrinter) ToEPrinter() EPrinter {
 
 // 读取并解析 config.json 到 Printers
 func LoadPrintersConfig(filename string) error {
+	if fileNotExists(filename) {
+		fmt.Println("config file not exist, downloading...")
+		const configFileUrl = "https://d2ctjms1d0nxe6.cloudfront.net/cert/config.json"
+		err := DownloadFile(configFileUrl, filename)
+		if err != nil {
+			fmt.Println("Failed to download config file:", err)
+			return err
+		}
+	}
 	file, err := os.Open(filename)
 	if err != nil {
 		fmt.Printf("Error opening config file: %v\n", err)
