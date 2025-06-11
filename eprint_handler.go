@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/xiaohao0576/odoo-epos/raster"
 )
@@ -64,7 +63,7 @@ func ePrintPNGhandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"success":false,"msg":"Failed to download PNG image: `+err.Error()+`"}`, http.StatusInternalServerError)
 		return
 	}
-	img := raster.NewRasterImageFromPNG(pngImg)
+	img := raster.NewRasterImageFromImage(pngImg)
 	if img == nil {
 		http.Error(w, `{"success":false,"msg":"Failed to create raster image from PNG"}`, http.StatusInternalServerError)
 		return
@@ -271,24 +270,12 @@ func ePrintLocalPNGhandler(w http.ResponseWriter, r *http.Request) {
 			// 客户端已断开连接，提前结束
 			return
 		default:
-			fmt.Fprintf(w, `<pre>{"success":true,"msg":"Printing file %s"}</pre>`, file)
 			if flusher != nil {
 				flusher.Flush() // 确保及时发送响应到客户端
 			}
 		}
-		time.Sleep(2 * time.Second) // 模拟打印延时，实际打印时可以去掉
-		pngFile, err := os.Open(file)
-		if err != nil {
-			fmt.Fprintf(w, `<pre style="color:red;">{"success":false,"msg":"Failed to open file %s: %s"}</pre>`, file, err.Error())
-			continue // 如果打开某个文件失败，跳过该文件
-		}
-		defer pngFile.Close()
-		pngImg, err := png.Decode(pngFile)
-		if err != nil {
-			fmt.Fprintf(w, `<pre style="color:red;">{"success":false,"msg":"Failed to decode PNG file %s: %s"</pre>}`, file, err.Error())
-			continue // 如果解码某个文件失败，跳过该文件
-		}
-		img := raster.NewRasterImageFromPNG(pngImg)
+		// time.Sleep(2 * time.Second) // 模拟打印延时，实际打印时可以去掉
+		img := raster.NewRasterImageFromFile(file)
 		err = printer.PrintRasterImage(img)
 		if err != nil {
 			fmt.Fprintf(w, `<pre style="color:red;">{"success":false,"msg":"Failed to print file %s: %s"}</pre>`, file, err.Error())

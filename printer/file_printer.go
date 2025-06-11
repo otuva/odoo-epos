@@ -3,6 +3,7 @@ package printer
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/xiaohao0576/odoo-epos/raster"
@@ -22,7 +23,14 @@ func (p FilePrinter) OpenCashBox() error {
 	return nil // 文件打印机不支持打开钱箱
 }
 func (p FilePrinter) PrintRasterImage(img *raster.RasterImage) error {
-	filename := fmt.Sprintf("%s/%s.png", p.dir, time.Now().Format("20060102-150405"))
+	var filename string
+	if img.GetFilename() != "" {
+		baseName := filepath.Base(img.GetFilename())
+		filename = fmt.Sprintf("%s/%s", p.dir, baseName)
+	} else {
+		filename = fmt.Sprintf("%s/%s.png", p.dir, time.Now().Format("20060102-150405"))
+	}
+	img = p.transformer.Transform(img) // 使用转换器转换图像
 	return img.SaveToPngFile(filename)
 }
 

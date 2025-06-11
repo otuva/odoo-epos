@@ -15,10 +15,11 @@ import (
 
 // EPOSImage 表示图片数据
 type RasterImage struct {
-	Width   int    `xml:"width,attr"`
-	Height  int    `xml:"height,attr"`
-	Align   string `xml:"align,attr"`
-	Content []byte `xml:",chardata"` // 图片数据
+	Width    int    `xml:"width,attr"`
+	Height   int    `xml:"height,attr"`
+	Align    string `xml:"align,attr"`
+	Content  []byte `xml:",chardata"` // 图片数据
+	filename string // 可选的文件名，用于保存图片时使用
 }
 
 // NewRasterImage 从XML数据中解析并返回RasterImage对象
@@ -42,7 +43,41 @@ func NewRasterImage(width, height int, content []byte) *RasterImage {
 	}
 }
 
-func NewRasterImageFromPNG(img image.Image) *RasterImage {
+// 从png文件创建RasterImage对象
+func NewRasterImageFromFile(filePath string) *RasterImage {
+	file, err := os.Open(filePath)
+	if err != nil {
+		fmt.Println("Failed to open file:", err)
+		return &RasterImage{
+			Width:    0,
+			Height:   0,
+			Align:    "center",
+			Content:  nil,      // 如果文件打开失败，返回空内容
+			filename: filePath, // 保存文件名以便后续使用
+		}
+	}
+	defer file.Close()
+
+	img, err := png.Decode(file)
+	if err != nil {
+		fmt.Println("Failed to decode PNG image:", err)
+		return nil
+	}
+
+	result := NewRasterImageFromImage(img)
+	result.filename = filePath // 保存文件名以便后续使用
+
+	return result
+}
+
+func (img *RasterImage) GetFilename() string {
+	if img == nil {
+		return ""
+	}
+	return img.filename
+}
+
+func NewRasterImageFromImage(img image.Image) *RasterImage {
 	if img == nil {
 		return nil
 	}
