@@ -5,13 +5,14 @@ import (
 )
 
 type RasterPattern struct {
-	NearBottom  bool          // 是否从底部开始搜索
-	Width       int           // 图像宽度
-	Height      int           // 图像高度
-	borderWidth int           // 边框宽度
-	BlackPixels []image.Point // 黑色像素点的索引列表
-	WhitePixels []image.Point // 白色像素点的索引列表
-	BlackRatio  float64       // 黑色像素点占比，正数表示上限，0表示不限制，负数表示下限
+	NearBottom  bool            // 是否从底部开始搜索
+	SearchArea  image.Rectangle // 搜索区域，默认为图像的全部区域
+	Width       int             // 图像宽度
+	Height      int             // 图像高度
+	borderWidth int             // 边框宽度
+	BlackPixels []image.Point   // 黑色像素点的索引列表
+	WhitePixels []image.Point   // 白色像素点的索引列表
+	BlackRatio  float64         // 黑色像素点占比，正数表示上限，0表示不限制，负数表示下限
 }
 
 func (p *RasterPattern) AddBlackPixel(x, y int) {
@@ -56,13 +57,42 @@ func (img *RasterImage) WithDeletePatternRows(pattern *RasterPattern) *RasterIma
 // Search 在图像中搜索匹配的图案
 // 根据 SearchDirection 的值决定从顶部还是底部开始搜索
 func (img *RasterImage) SearchPattern(pattern *RasterPattern) (int, int) {
-	if pattern.Width <= 0 {
-		pattern.Width = img.Width
+	width := pattern.Width
+	if width <= 0 {
+		width = img.Width
 	}
-	if pattern.Height <= 0 {
-		pattern.Height = img.Height
+	height := pattern.Height
+	if height <= 0 {
+		height = img.Height
 	}
-	if img == nil || img.Width < pattern.Width || img.Height < pattern.Height {
+	area := pattern.SearchArea
+	if area.Empty() {
+		area = image.Rect(0, 0, img.Width, img.Height)
+	}
+	// 后续都用 area 替换 pattern.SearchArea
+
+	// 支持负数索引
+	if area.Max.X < 0 {
+		area.Max.X = img.Width + area.Max.X
+	}
+	if area.Max.Y < 0 {
+		area.Max.Y = img.Height + area.Max.Y
+	}
+	if area.Min.X < 0 {
+		area.Min.X = img.Width + area.Min.X
+	}
+	if area.Min.Y < 0 {
+		area.Min.Y = img.Height + area.Min.Y
+	}
+	// 确保搜索区域在图像范围内
+	if area.Max.X > img.Width {
+		area.Max.X = img.Width
+	}
+	if area.Max.Y > img.Height {
+		area.Max.Y = img.Height
+	}
+
+	if img == nil || img.Width < width || img.Height < height {
 		return -1, -1
 	}
 	if pattern.NearBottom {
@@ -77,10 +107,13 @@ func (img *RasterImage) SearchPattern(pattern *RasterPattern) (int, int) {
 // 如果图案的宽度或高度无效，或者图像无效或小于图案尺寸，则返回 (-1, -1)
 // 只返回第一个匹配的图案位置
 func (p *RasterPattern) SearchFromTop(img *RasterImage) (int, int) {
-	maxX := img.Width - p.Width
-	maxY := img.Height - p.Height
-	for y := 0; y <= maxY; y++ {
-		for x := 0; x <= maxX; x++ {
+	area := p.SearchArea
+	minX := area.Min.X
+	minY := area.Min.Y
+	maxX := area.Max.X - p.Width
+	maxY := area.Max.Y - p.Height
+	for y := minY; y <= maxY; y++ {
+		for x := minX; x <= maxX; x++ {
 			if p.IsMatchAt(img, x, y) {
 				return x, y
 			}
@@ -94,14 +127,14 @@ func (p *RasterPattern) SearchFromTop(img *RasterImage) (int, int) {
 // 注意：这里假设图案的宽度和高度都大于0
 // 如果图案的宽度或高度无效，或者图像无效或小于图案尺寸，则返回 (-1, -1)
 // 只返回第一个匹配的图案位置
-// 这种方法适用于需要从底部开始搜索的场景，例如打印机的底部对齐
-// 这种方法可以用于处理一些特殊的图像模式或打印机对齐方式
-// 例如，当图案位于图像的底部时，可以使用此方法来快速找到匹配位置
 func (p *RasterPattern) SearchFromBottom(img *RasterImage) (int, int) {
-	maxX := img.Width - p.Width
-	maxY := img.Height - p.Height
-	for y := maxY; y >= 0; y-- {
-		for x := 0; x <= maxX; x++ {
+	area := p.SearchArea
+	minX := area.Min.X
+	maxX := area.Max.X - p.Width
+	minY := area.Min.Y
+	maxY := area.Max.Y - p.Height
+	for y := maxY; y >= minY; y-- {
+		for x := minX; x <= maxX; x++ {
 			if p.IsMatchAt(img, x, y) {
 				return x, y
 			}
