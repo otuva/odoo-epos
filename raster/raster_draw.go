@@ -2,8 +2,22 @@ package raster
 
 import "time"
 
-func (img *RasterImage) DrawText(text []rune, x, y int) {
-
+// WithDrawText 在图像上绘制文本
+// text: 要绘制的文本内容
+// x, y: 文本的起始位置坐标
+// 返回值：返回一个新的RasterImage对象，包含绘制的文本
+func (img *RasterImage) WithDrawText(text []rune, x, y int) *RasterImage {
+	if img == nil || len(text) == 0 {
+		return img // 如果图像为nil或文本为空，直接返回原图像
+	}
+	if img.Width <= 0 || img.Height <= 0 || img.Content == nil {
+		return img // 如果图像无效，直接返回原图像
+	}
+	textImg := NewRasterImageFromText(text)
+	if textImg == nil {
+		return img
+	}
+	return img.WithPaste(textImg, x, y) // 将文本图像粘贴到指定位置
 }
 
 func NewRasterImageFromText(text []rune) *RasterImage {
