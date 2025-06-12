@@ -11,8 +11,8 @@ import (
 )
 
 type FilePrinter struct {
-	dir         string                        // 文件保存目录
-	transformer transformer.RasterTransformer // 用于转换图像的转换器
+	dir         string                      // 文件保存目录
+	transformer transformer.TransformerFunc // 用于转换图像的转换器
 }
 
 func (p FilePrinter) String() string {
@@ -30,7 +30,7 @@ func (p FilePrinter) PrintRasterImage(img *raster.RasterImage) error {
 	} else {
 		filename = fmt.Sprintf("%s/%s.png", p.dir, time.Now().Format("20060102-150405"))
 	}
-	img = p.transformer.Transform(img) // 使用转换器转换图像
+	img = p.transformer(img) // 使用转换器转换图像
 	return img.SaveToPngFile(filename)
 }
 

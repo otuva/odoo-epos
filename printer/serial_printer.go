@@ -13,13 +13,13 @@ import (
 )
 
 type SerialPrinter struct {
-	paperWidth        int                           // 纸张宽度
-	marginBottom      int                           // 下边距
-	cutCommand        []byte                        // 切纸命令
-	cashDrawerCommand []byte                        // 钱箱命令
-	serialConfig      string                        // 串口配置字符串
-	fd                *serial.Port                  // 打印机文件描述符
-	transformer       transformer.RasterTransformer // 用于转换图像的转换器
+	paperWidth        int                         // 纸张宽度
+	marginBottom      int                         // 下边距
+	cutCommand        []byte                      // 切纸命令
+	cashDrawerCommand []byte                      // 钱箱命令
+	serialConfig      string                      // 串口配置字符串
+	fd                *serial.Port                // 打印机文件描述符
+	transformer       transformer.TransformerFunc // 用于转换图像的转换器
 }
 
 func (p *SerialPrinter) String() string {
@@ -102,7 +102,7 @@ func (p *SerialPrinter) PrintRasterImage(img *raster.RasterImage) error {
 	if err != nil {
 		return fmt.Errorf("failed to reset printer: %w", err)
 	}
-	img = p.transformer.Transform(img) // 使用转换器转换图像
+	img = p.transformer(img) // 使用转换器转换图像
 	for _, page := range img.CutPages() {
 		page.AutoMarginLeft(p.paperWidth)
 		page.AddMarginBottom(p.marginBottom)
