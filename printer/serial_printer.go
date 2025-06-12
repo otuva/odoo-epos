@@ -103,10 +103,12 @@ func (p *SerialPrinter) PrintRasterImage(img *raster.RasterImage) error {
 		return fmt.Errorf("failed to reset printer: %w", err)
 	}
 	img = p.transformer.Transform(img) // 使用转换器转换图像
-	img.AutoMarginLeft(p.paperWidth)
-	img.AddMarginBottom(p.marginBottom)
-	p.fd.Write(img.ToEscPosRasterCommand(1024))
-	p.fd.Write(p.cutCommand) // 切纸命令
+	for _, page := range img.CutPages() {
+		page.AutoMarginLeft(p.paperWidth)
+		page.AddMarginBottom(p.marginBottom)
+		p.fd.Write(page.ToEscPosRasterCommand(1024))
+		p.fd.Write(p.cutCommand) // 切纸命令
+	}
 	return nil
 }
 

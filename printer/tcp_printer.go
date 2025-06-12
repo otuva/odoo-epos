@@ -75,14 +75,17 @@ func (p *TCPPrinter) PrintRasterImage(img *raster.RasterImage) error {
 	}
 	defer p.Close()
 	img = p.transformer.Transform(img) // 使用转换器转换图像
-	img.AutoMarginLeft(p.paperWidth)
-	img.AddMarginBottom(p.marginBottom)
-	if _, err := p.fd.Write(img.ToEscPosRasterCommand(1024)); err != nil {
-		return err
+	for _, page := range img.CutPages() {
+		page.AutoMarginLeft(p.paperWidth)
+		page.AddMarginBottom(p.marginBottom)
+		if _, err := p.fd.Write(page.ToEscPosRasterCommand(1024)); err != nil {
+			return err
+		}
+		if _, err := p.fd.Write(p.cutCommand); err != nil {
+			return err
+		}
 	}
-	if _, err := p.fd.Write(p.cutCommand); err != nil {
-		return err
-	}
+
 	return nil
 }
 

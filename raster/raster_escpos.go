@@ -1,6 +1,6 @@
 package raster
 
-func (img *RasterImage) toEscPosRasterCommand() []byte {
+func (img *RasterImage) toGSV0() []byte {
 	// 参数验证
 	if img == nil || img.Width <= 0 || img.Height <= 0 || img.Content == nil {
 		return nil
@@ -18,7 +18,7 @@ func (img *RasterImage) toEscPosRasterCommand() []byte {
 
 func (img *RasterImage) ToEscPosRasterCommand(maxHeight int) []byte {
 	if maxHeight <= 0 || maxHeight > img.Height {
-		return img.toEscPosRasterCommand()
+		return img.toGSV0()
 	}
 	result := make([]byte, 0, 100+len(img.Content))
 	remainingHeight := img.Height
