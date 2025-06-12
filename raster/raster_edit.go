@@ -320,3 +320,65 @@ func (img *RasterImage) WithBorder(borderWidth int) *RasterImage {
 		Content: newContent,
 	}
 }
+
+// shiftContent 返回内容向左或向右移动指定的位数
+// shift: 正数表示向右移动，负数表示向左移动
+// 如果移动位数为0，则返回原图像
+func (img *RasterImage) shiftContent(shift int) *RasterImage {
+	if img == nil || img.Content == nil || img.Width <= 0 || img.Height <= 0 {
+		return img
+	}
+	if shift == 0 {
+		return img
+	}
+
+	widthBytes := img.Width / 8
+	newContent := make([]byte, len(img.Content))
+
+	if shift > 0 { // 向右移动
+		for row := 0; row < img.Height; row++ {
+			srcRowStart := row * widthBytes
+			dstRowStart := srcRowStart + shift/8
+			for col := 0; col < widthBytes-shift/8; col++ {
+				newContent[dstRowStart+col] = img.Content[srcRowStart+col]
+			}
+			// 填充左侧空白为0
+			for col := 0; col < shift/8; col++ {
+				newContent[srcRowStart+col] = 0
+			}
+		}
+	} else { // 向左移动
+		for row := 0; row < img.Height; row++ {
+			srcRowStart := row * widthBytes
+			dstRowStart := srcRowStart - (-shift / 8)
+			for col := -shift / 8; col < widthBytes; col++ {
+				newContent[dstRowStart+col] = img.Content[srcRowStart+col]
+			}
+			// 填充右侧空白为0
+			for col := widthBytes + shift/8; col < widthBytes; col++ {
+				newContent[srcRowStart+col] = 0
+			}
+		}
+	}
+
+	return &RasterImage{
+		Width:   img.Width,
+		Height:  img.Height,
+		Align:   img.Align,
+		Content: newContent,
+	}
+}
+
+func (img *RasterImage) WithShiftLeft(shift int) *RasterImage {
+	if shift <= 0 {
+		return img // 如果移动位数小于等于0，则返回原图像
+	}
+	return img.shiftContent(-shift) // 向左移动
+}
+
+func (img *RasterImage) WithShiftRight(shift int) *RasterImage {
+	if shift <= 0 {
+		return img // 如果移动位数小于等于0，则返回原图像
+	}
+	return img.shiftContent(shift) // 向右移动
+}
