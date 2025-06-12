@@ -213,9 +213,13 @@ func (img *RasterImage) WithPaste(other *RasterImage, x, y int) *RasterImage {
 		dstRowStart := (y + row) * dstRowBytes
 		for col := 0; col < pasteWidth; col++ {
 			srcByteIdx := srcRowStart + col/8
+			dstByteIdx := dstRowStart + (x+col)/8
+			// 越界保护
+			if srcByteIdx >= len(other.Content) || dstByteIdx >= len(newContent) {
+				continue
+			}
 			srcBitIdx := 7 - (col % 8)
 			if (other.Content[srcByteIdx] & (1 << srcBitIdx)) != 0 {
-				dstByteIdx := dstRowStart + (x+col)/8
 				dstBitIdx := 7 - ((x + col) % 8)
 				newContent[dstByteIdx] |= 1 << dstBitIdx
 			}
