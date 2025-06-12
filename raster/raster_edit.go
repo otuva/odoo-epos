@@ -246,8 +246,16 @@ func (img *RasterImage) WithErase(x, y, width, height int) *RasterImage {
 	if y < 0 {
 		y = img.Height + y
 	}
-	if x < 0 || y < 0 || width <= 0 || height <= 0 || x+width > img.Width || y+height > img.Height {
+	if x < 0 || y < 0 || width <= 0 || height <= 0 {
 		return img
+	}
+
+	if x+width > img.Width {
+		width = img.Width - x // 调整宽度，防止越界
+	}
+
+	if y+height > img.Height {
+		height = img.Height - y // 调整高度，防止越界
 	}
 
 	newContent := make([]byte, len(img.Content))
