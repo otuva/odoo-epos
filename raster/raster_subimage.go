@@ -89,6 +89,37 @@ func (s *RasterSubImage) GetPixel(x, y int) int {
 	return s.Original.GetPixel(originalX, originalY)
 }
 
+func (s *RasterSubImage) Crop() *RasterImage {
+	return s.Original.WithCrop(s.Area.Min.X, s.Area.Min.Y, s.Area.Dx(), s.Area.Dy())
+}
+
+func (s *RasterSubImage) SubImage(area image.Rectangle) *RasterSubImage {
+	if area.Min.X < 0 {
+		area.Min.X += s.Area.Dx() // Adjust for negative coordinates
+	}
+	if area.Min.Y < 0 {
+		area.Min.Y += s.Area.Dy() // Adjust for negative coordinates
+	}
+	if area.Max.X < 0 {
+		area.Max.X += s.Area.Dx() // Adjust for negative coordinates
+	}
+	if area.Max.Y < 0 {
+		area.Max.Y += s.Area.Dy() // Adjust for negative coordinates
+	}
+	area = area.Intersect(s.Area)
+	if area.Empty() {
+		return nil // Invalid area
+	}
+	// Adjust the area to be relative to the sub-image's bounds.
+	adjustedArea := image.Rect(
+		area.Min.X+s.Area.Min.X,
+		area.Min.Y+s.Area.Min.Y,
+		area.Max.X+s.Area.Min.X,
+		area.Max.Y+s.Area.Min.Y,
+	)
+	return NewRasterSubImage(s.Original, adjustedArea)
+}
+
 // SubImage returns a sub-image of the original image defined by the area of this RasterSubImage.
 func (rs *RasterImage) SubImage(area image.Rectangle) *RasterSubImage {
 	if area.Min.X < 0 {
