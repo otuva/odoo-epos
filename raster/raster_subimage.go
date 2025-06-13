@@ -27,11 +27,11 @@ func (s *RasterSubImage) Bounds() image.Rectangle {
 
 func (s *RasterSubImage) Width() int {
 	// Return the width of the sub-image, which is the width of the area defined in the RasterSubImage.
-	return s.Width()
+	return s.Area.Dx()
 }
 func (s *RasterSubImage) Height() int {
 	// Return the height of the sub-image, which is the height of the area defined in the RasterSubImage.
-	return s.Height()
+	return s.Area.Dy()
 }
 
 func (s *RasterSubImage) At(x, y int) color.Color {
@@ -100,6 +100,48 @@ func (s *RasterSubImage) GetPixel(x, y int) int {
 
 func (s *RasterSubImage) Crop() *RasterImage {
 	return s.Original.WithCrop(s.Area.Min.X, s.Area.Min.Y, s.Width(), s.Height())
+}
+
+func (s *RasterSubImage) SetBorder() {
+	// Set a border around the sub-image by setting the pixels at the edges to black.
+	for y := s.Area.Min.Y; y < s.Area.Max.Y; y++ {
+		for x := s.Area.Min.X; x < s.Area.Max.X; x++ {
+			if x == s.Area.Min.X || x == s.Area.Max.X-1 || y == s.Area.Min.Y || y == s.Area.Max.Y-1 {
+				s.Original.SetPixelBlack(x, y)
+			}
+		}
+	}
+}
+
+func (s *RasterSubImage) FillBlack() {
+	// Set all pixels in the sub-image to black.
+	for y := s.Area.Min.Y; y < s.Area.Max.Y; y++ {
+		for x := s.Area.Min.X; x < s.Area.Max.X; x++ {
+			s.Original.SetPixelBlack(x, y)
+		}
+	}
+}
+
+func (s *RasterSubImage) FillWhite() {
+	// Set all pixels in the sub-image to white.
+	for y := s.Area.Min.Y; y < s.Area.Max.Y; y++ {
+		for x := s.Area.Min.X; x < s.Area.Max.X; x++ {
+			s.Original.SetPixelWhite(x, y)
+		}
+	}
+}
+
+func (s *RasterSubImage) Inverse() {
+	// Inverse the colors in the sub-image.
+	for y := s.Area.Min.Y; y < s.Area.Max.Y; y++ {
+		for x := s.Area.Min.X; x < s.Area.Max.X; x++ {
+			if s.GetPixel(x, y) == 0 { // If pixel is white
+				s.SetPixelBlack(x, y)
+			} else { // If pixel is black
+				s.SetPixelWhite(x, y)
+			}
+		}
+	}
 }
 
 func (s *RasterSubImage) SubImage(area image.Rectangle) *RasterSubImage {
