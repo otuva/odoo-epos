@@ -25,6 +25,15 @@ func (s *RasterSubImage) Bounds() image.Rectangle {
 	return s.Area
 }
 
+func (s *RasterSubImage) Width() int {
+	// Return the width of the sub-image, which is the width of the area defined in the RasterSubImage.
+	return s.Area.Dx()
+}
+func (s *RasterSubImage) Height() int {
+	// Return the height of the sub-image, which is the height of the area defined in the RasterSubImage.
+	return s.Area.Dy()
+}
+
 func (s *RasterSubImage) At(x, y int) color.Color {
 	return s.Original.At(x+s.Area.Min.X, y+s.Area.Min.Y)
 }
