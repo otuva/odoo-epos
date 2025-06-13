@@ -27,11 +27,11 @@ func (s *RasterSubImage) Bounds() image.Rectangle {
 
 func (s *RasterSubImage) Width() int {
 	// Return the width of the sub-image, which is the width of the area defined in the RasterSubImage.
-	return s.Area.Dx()
+	return s.Width()
 }
 func (s *RasterSubImage) Height() int {
 	// Return the height of the sub-image, which is the height of the area defined in the RasterSubImage.
-	return s.Area.Dy()
+	return s.Height()
 }
 
 func (s *RasterSubImage) At(x, y int) color.Color {
@@ -44,18 +44,18 @@ func (s *RasterSubImage) ColorModel() color.Model {
 
 func (s *RasterSubImage) Size() (width, height int) {
 	// Return the size of the sub-image, which is the width and height of the area defined in the RasterSubImage.
-	return s.Area.Dx(), s.Area.Dy()
+	return s.Width(), s.Height()
 }
 
 func (s *RasterSubImage) SetPixelBlack(x, y int) {
 	if x < 0 {
-		x = s.Area.Dx() + x // Adjust for negative coordinates
+		x = s.Width() + x // Adjust for negative coordinates
 	}
 	if y < 0 {
-		y = s.Area.Dy() + y // Adjust for negative coordinates
+		y = s.Height() + y // Adjust for negative coordinates
 	}
 	// Set the pixel at (x, y) in the sub-image to black.
-	if x >= s.Area.Dx() || y >= s.Area.Dy() {
+	if x >= s.Width() || y >= s.Height() {
 		return // Out of bounds
 	}
 	// Calculate the corresponding pixel in the original image.
@@ -66,13 +66,13 @@ func (s *RasterSubImage) SetPixelBlack(x, y int) {
 
 func (s *RasterSubImage) SetPixelWhite(x, y int) {
 	if x < 0 {
-		x = s.Area.Dx() + x // Adjust for negative coordinates
+		x = s.Width() + x // Adjust for negative coordinates
 	}
 	if y < 0 {
-		y = s.Area.Dy() + y // Adjust for negative coordinates
+		y = s.Height() + y // Adjust for negative coordinates
 	}
 	// Set the pixel at (x, y) in the sub-image to white.
-	if x >= s.Area.Dx() || y >= s.Area.Dy() {
+	if x >= s.Width() || y >= s.Height() {
 		return // Out of bounds
 	}
 	// Calculate the corresponding pixel in the original image.
@@ -83,13 +83,13 @@ func (s *RasterSubImage) SetPixelWhite(x, y int) {
 
 func (s *RasterSubImage) GetPixel(x, y int) int {
 	if x < 0 {
-		x = s.Area.Dx() + x // Adjust for negative coordinates
+		x = s.Width() + x // Adjust for negative coordinates
 	}
 	if y < 0 {
-		y = s.Area.Dy() + y // Adjust for negative coordinates
+		y = s.Height() + y // Adjust for negative coordinates
 	}
 	// Get the pixel value at (x, y) in the sub-image.
-	if x >= s.Area.Dx() || y >= s.Area.Dy() {
+	if x >= s.Width() || y >= s.Height() {
 		return 0 // Out of bounds, return white (0)
 	}
 	// Calculate the corresponding pixel in the original image.
@@ -99,21 +99,21 @@ func (s *RasterSubImage) GetPixel(x, y int) int {
 }
 
 func (s *RasterSubImage) Crop() *RasterImage {
-	return s.Original.WithCrop(s.Area.Min.X, s.Area.Min.Y, s.Area.Dx(), s.Area.Dy())
+	return s.Original.WithCrop(s.Area.Min.X, s.Area.Min.Y, s.Width(), s.Height())
 }
 
 func (s *RasterSubImage) SubImage(area image.Rectangle) *RasterSubImage {
 	if area.Min.X < 0 {
-		area.Min.X += s.Area.Dx() // Adjust for negative coordinates
+		area.Min.X += s.Width() // Adjust for negative coordinates
 	}
 	if area.Min.Y < 0 {
-		area.Min.Y += s.Area.Dy() // Adjust for negative coordinates
+		area.Min.Y += s.Height() // Adjust for negative coordinates
 	}
 	if area.Max.X < 0 {
-		area.Max.X += s.Area.Dx() // Adjust for negative coordinates
+		area.Max.X += s.Width() // Adjust for negative coordinates
 	}
 	if area.Max.Y < 0 {
-		area.Max.Y += s.Area.Dy() // Adjust for negative coordinates
+		area.Max.Y += s.Height() // Adjust for negative coordinates
 	}
 	area = area.Intersect(s.Area)
 	if area.Empty() {
