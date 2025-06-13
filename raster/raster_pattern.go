@@ -5,74 +5,111 @@ import (
 )
 
 type RasterPattern struct {
-	NearBottom  bool            // 是否从底部开始搜索
-	SearchArea  image.Rectangle // 搜索区域，默认为图像的全部区域
-	Width       int             // 图像宽度
-	Height      int             // 图像高度
-	BorderWidth int             // 边框宽度
-	BlackPixels []image.Point   // 黑色像素点的索引列表
-	WhitePixels []image.Point   // 白色像素点的索引列表
-	BlackRatio  float64         // 黑色像素点占比，正数表示上限，0表示不限制，负数表示下限
+	NearBottom bool                // 是否从底部开始搜索
+	SearchArea image.Rectangle     // 搜索区域，默认为图像的全部区域
+	Width      int                 // 图像宽度
+	Height     int                 // 图像高度
+	PointColor map[image.Point]int // 点颜色映射，0表示白色，1表示黑色
+	BlackRatio float64             // 黑色像素点占比，正数表示上限，0表示不限制，负数表示下限
 }
 
-func (p *RasterPattern) AddBlackPixel(x, y int) {
-	p.BlackPixels = append(p.BlackPixels, image.Point{X: x, Y: y})
+func (p *RasterPattern) AddBlackPoint(x, y int) {
+	p.PointColor[image.Point{x, y}] = 1
 }
 
-func (p *RasterPattern) AddWhitePixel(x, y int) {
-	p.WhitePixels = append(p.WhitePixels, image.Point{X: x, Y: y})
+func (p *RasterPattern) AddWhitePoint(x, y int) {
+	p.PointColor[image.Point{x, y}] = 0
+}
+
+func (p *RasterPattern) DeletePoint(x, y int) {
+	delete(p.PointColor, image.Point{x, y})
+}
+
+func (p *RasterPattern) GetPointColor(x, y int) int {
+	if color, exists := p.PointColor[image.Point{x, y}]; exists {
+		return color // 返回点的颜色，0表示白色，1表示黑色
+	}
+	return -1 // 如果点不存在，返回 -1
+}
+
+func (p *RasterPattern) AddBlackRow(y int) {
+	for x := 0; x < p.Width; x++ {
+		p.AddBlackPoint(x, y)
+	}
+}
+
+func (p *RasterPattern) AddWhiteRow(y int) {
+	for x := 0; x < p.Width; x++ {
+		p.AddWhitePoint(x, y)
+	}
+}
+
+func (p *RasterPattern) AddBlackColumn(x int) {
+	for y := 0; y < p.Height; y++ {
+		p.AddBlackPoint(x, y)
+	}
+}
+func (p *RasterPattern) AddWhiteColumn(x int) {
+	for y := 0; y < p.Height; y++ {
+		p.AddWhitePoint(x, y)
+	}
 }
 
 func (p *RasterPattern) AddBlackRows(rows []int) {
-	for _, row := range rows {
-		for x := 0; x < p.Width; x++ {
-			p.BlackPixels = append(p.BlackPixels, image.Point{X: x, Y: row})
-		}
+	for y := range rows {
+		p.AddBlackRow(y)
 	}
 }
 
 func (p *RasterPattern) AddWhiteRows(rows []int) {
-	for _, row := range rows {
-		for x := 0; x < p.Width; x++ {
-			p.WhitePixels = append(p.WhitePixels, image.Point{X: x, Y: row})
-		}
+	for y := range rows {
+		p.AddWhiteRow(y)
 	}
 }
 
-func (p *RasterPattern) AddBlackColumns(columns []int) {
-	for _, col := range columns {
-		for y := 0; y < p.Height; y++ {
-			p.BlackPixels = append(p.BlackPixels, image.Point{X: col, Y: y})
-		}
+func (p *RasterPattern) AddBlackColumns(cols []int) {
+	for x := range cols {
+		p.AddBlackColumn(x)
 	}
 }
-
-func (p *RasterPattern) AddWhiteColumns(columns []int) {
-	for _, col := range columns {
-		for y := 0; y < p.Height; y++ {
-			p.WhitePixels = append(p.WhitePixels, image.Point{X: col, Y: y})
-		}
+func (p *RasterPattern) AddWhiteColumns(cols []int) {
+	for x := range cols {
+		p.AddWhiteColumn(x)
 	}
 }
 
 func (p *RasterPattern) AddBlackArea(rect image.Rectangle) {
-	if rect.Empty() {
-		return // 无效的矩形区域
-	}
 	for y := rect.Min.Y; y < rect.Max.Y; y++ {
 		for x := rect.Min.X; x < rect.Max.X; x++ {
-			p.AddBlackPixel(x, y)
+			p.AddBlackPoint(x, y)
 		}
 	}
 }
 
 func (p *RasterPattern) AddWhiteArea(rect image.Rectangle) {
-	if rect.Empty() {
-		return // 无效的矩形区域
-	}
 	for y := rect.Min.Y; y < rect.Max.Y; y++ {
 		for x := rect.Min.X; x < rect.Max.X; x++ {
-			p.AddWhitePixel(x, y)
+			p.AddWhitePoint(x, y)
+		}
+	}
+}
+
+func (p *RasterPattern) AddBlackBorder(width int) {
+	for y := 0; y < p.Height; y++ {
+		for x := 0; x < p.Width; x++ {
+			if x < width || x >= p.Width-width || y < width || y >= p.Height-width {
+				p.AddBlackPoint(x, y) // 添加黑色边框点
+			}
+		}
+	}
+}
+
+func (p *RasterPattern) AddWhiteBorder(width int) {
+	for y := 0; y < p.Height; y++ {
+		for x := 0; x < p.Width; x++ {
+			if x < width || x >= p.Width-width || y < width || y >= p.Height-width {
+				p.AddWhitePoint(x, y) // 添加白色边框点
+			}
 		}
 	}
 }
@@ -153,13 +190,13 @@ func (img *RasterImage) WithBorderPatternAll(pattern *RasterPattern) {
 	}
 }
 
-func isCovered(x, y int, matches []image.Point, patternWidth, patternHeight int) bool {
+func skipMatched(x, y int, matches []image.Point, patternWidth, patternHeight int) int {
 	for _, pt := range matches {
 		if x >= pt.X && x < pt.X+patternWidth && y >= pt.Y && y < pt.Y+patternHeight {
-			return true
+			return pt.X + patternWidth // 如果当前点在已匹配区域内，返回下一个可用的 x 坐标
 		}
 	}
-	return false
+	return x
 }
 
 // SearchPatternAll 在图像中搜索所有匹配的图案
@@ -208,11 +245,13 @@ func (img *RasterImage) SearchPatternAll(pattern *RasterPattern) []image.Point {
 
 	for y := minY; y <= maxY; y++ {
 		for x := minX; x <= maxX; x++ {
-			if isCovered(x, y, matches, pattern.Width, pattern.Height) {
-				continue // 跳过已匹配区域
+			x = skipMatched(x, y, matches, pattern.Width, pattern.Height) // 跳过已匹配区域
+			if x > maxX {
+				break // 跳过后已超出范围，结束本行
 			}
 			if pattern.IsMatchAt(img, x, y) {
 				matches = append(matches, image.Point{X: x, Y: y})
+				x += pattern.Width - 1 // 跳过已匹配区域，避免重复匹配
 			}
 		}
 	}
@@ -319,23 +358,8 @@ func (p *RasterPattern) IsMatchAt(img *RasterImage, offsetX, offsetY int) bool {
 		return false
 	}
 
-	if p.BorderWidth > 0 {
-		// 取 (0,0) 位置的颜色作为边框颜色
-		borderColor := img.GetPixel(offsetX, offsetY)
-		// 检查边框区域颜色是否一致
-		for y := 0; y < p.Height; y++ {
-			for x := 0; x < p.Width; x++ {
-				if x < p.BorderWidth || x >= p.Width-p.BorderWidth || y < p.BorderWidth || y >= p.Height-p.BorderWidth {
-					if img.GetPixel(offsetX+x, offsetY+y) != borderColor {
-						return false
-					}
-				}
-			}
-		}
-	}
-
-	// 黑色像素点判断
-	for _, point := range p.BlackPixels {
+	// 边框像素点是否匹配
+	for point, color := range p.PointColor {
 		if point.X < 0 {
 			point.X = p.Width + point.X // 支持负数索引
 		}
@@ -343,22 +367,8 @@ func (p *RasterPattern) IsMatchAt(img *RasterImage, offsetX, offsetY int) bool {
 			point.Y = p.Height + point.Y // 支持负数索引
 		}
 		pixel := img.GetPixel(offsetX+point.X, offsetY+point.Y)
-		if pixel != 1 {
-			return false
-		}
-	}
-
-	// 白色像素点判断
-	for _, point := range p.WhitePixels {
-		if point.X < 0 {
-			point.X = p.Width + point.X // 支持负数索引
-		}
-		if point.Y < 0 {
-			point.Y = p.Height + point.Y // 支持负数索引
-		}
-		pixel := img.GetPixel(offsetX+point.X, offsetY+point.Y)
-		if pixel != 0 {
-			return false
+		if pixel != color {
+			return false // 如果颜色不匹配，返回 false
 		}
 	}
 
