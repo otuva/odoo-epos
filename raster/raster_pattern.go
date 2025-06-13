@@ -1,7 +1,6 @@
 package raster
 
 import (
-	"fmt"
 	"image"
 )
 
@@ -154,6 +153,15 @@ func (img *RasterImage) WithBorderPatternAll(pattern *RasterPattern) {
 	}
 }
 
+func isCovered(x, y int, matches []image.Point, patternWidth, patternHeight int) bool {
+	for _, pt := range matches {
+		if x >= pt.X && x < pt.X+patternWidth && y >= pt.Y && y < pt.Y+patternHeight {
+			return true
+		}
+	}
+	return false
+}
+
 // SearchPatternAll 在图像中搜索所有匹配的图案
 // 返回所有匹配的图案位置列表
 func (img *RasterImage) SearchPatternAll(pattern *RasterPattern) []image.Point {
@@ -200,15 +208,14 @@ func (img *RasterImage) SearchPatternAll(pattern *RasterPattern) []image.Point {
 
 	for y := minY; y <= maxY; y++ {
 		for x := minX; x <= maxX; x++ {
-			fmt.Printf("Checking pattern at (%d, %d)\n", x, y) // 输出检查位置
+			if isCovered(x, y, matches, pattern.Width, pattern.Height) {
+				continue // 跳过已匹配区域
+			}
 			if pattern.IsMatchAt(img, x, y) {
 				matches = append(matches, image.Point{X: x, Y: y})
-				x = x + pattern.Width - 1  // 跳过已匹配的区域
-				y = y + pattern.Height - 1 // 跳过已匹配的区域
 			}
 		}
 	}
-
 	return matches // 返回所有匹配的图案位置列表
 }
 
