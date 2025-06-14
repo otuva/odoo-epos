@@ -181,18 +181,6 @@ func (s *RasterSubImage) GlobalPoint(x, y int) image.Point {
 }
 
 func (s *RasterSubImage) Select(area image.Rectangle) *RasterSubImage {
-	if area.Min.X < 0 {
-		area.Min.X += s.Width() // Adjust for negative coordinates
-	}
-	if area.Min.Y < 0 {
-		area.Min.Y += s.Height() // Adjust for negative coordinates
-	}
-	if area.Max.X < 0 {
-		area.Max.X += s.Width() // Adjust for negative coordinates
-	}
-	if area.Max.Y < 0 {
-		area.Max.Y += s.Height() // Adjust for negative coordinates
-	}
 	// Offset the area to the coordinates of the original image
 	adjustedArea := image.Rect(
 		area.Min.X+s.Area.Min.X,
@@ -211,39 +199,6 @@ func (s *RasterSubImage) Select(area image.Rectangle) *RasterSubImage {
 
 // SubImage returns a sub-image of the original image defined by the area of this RasterSubImage.
 func (rs *RasterImage) Select(area image.Rectangle) *RasterSubImage {
-	if area.Min.X < 0 {
-		area.Min.X += rs.Width // Adjust for negative coordinates
-	}
-	if area.Min.Y < 0 {
-		area.Min.Y += rs.Height // Adjust for negative coordinates
-	}
-	if area.Max.X < 0 {
-		area.Max.X += rs.Width // Adjust for negative coordinates
-	}
-	if area.Max.Y < 0 {
-		area.Max.Y += rs.Height // Adjust for negative coordinates
-	}
-	// Clamp values to valid ranges
-	if area.Min.X < 0 {
-		area.Min.X = 0
-	}
-	if area.Min.Y < 0 {
-		area.Min.Y = 0
-	}
-	if area.Max.X > rs.Width {
-		area.Max.X = rs.Width
-	}
-	if area.Max.Y > rs.Height {
-		area.Max.Y = rs.Height
-	}
-	// Ensure Min <= Max
-	if area.Min.X > area.Max.X {
-		area.Min.X = area.Max.X
-	}
-	if area.Min.Y > area.Max.Y {
-		area.Min.Y = area.Max.Y
-	}
-	fmt.Println("Selecting area:", area)
 	if area.Empty() {
 		return nil // Invalid area
 	}
