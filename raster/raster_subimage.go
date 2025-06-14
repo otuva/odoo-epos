@@ -1,6 +1,7 @@
 package raster
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 )
@@ -98,6 +99,10 @@ func (s *RasterSubImage) GetPixel(x, y int) int {
 	return s.Original.GetPixel(originalX, originalY)
 }
 
+func (s *RasterSubImage) GetPointPixel(point image.Point) int {
+	return s.Original.GetPixel(point.X+s.Area.Min.X, point.Y+s.Area.Min.Y)
+}
+
 func (s *RasterSubImage) Crop() *RasterImage {
 	return s.Original.WithCrop(s.Area.Min.X, s.Area.Min.Y, s.Width(), s.Height())
 }
@@ -144,7 +149,38 @@ func (s *RasterSubImage) Inverse() {
 	}
 }
 
-func (s *RasterSubImage) SubImage(area image.Rectangle) *RasterSubImage {
+func (s *RasterSubImage) BlackRatio() float64 {
+	// Calculate the ratio of black pixels in the sub-image.
+	blackCount := 0
+	totalCount := s.Width() * s.Height()
+	for y := 0; y < s.Height(); y++ {
+		for x := 0; x < s.Width(); x++ {
+			if s.GetPixel(x, y) == 1 { // If pixel is black
+				blackCount++
+			}
+		}
+	}
+	return float64(blackCount) / float64(totalCount)
+}
+
+func (s *RasterSubImage) GlobalX(x int) int {
+	// Convert local x coordinate to global x coordinate in the original image.
+	return x + s.Area.Min.X
+}
+func (s *RasterSubImage) GlobalY(y int) int {
+	// Convert local y coordinate to global y coordinate in the original image.
+	return y + s.Area.Min.Y
+}
+
+func (s *RasterSubImage) GlobalPoint(x, y int) image.Point {
+	// Convert local point to global point in the original image.
+	return image.Point{
+		x + s.Area.Min.X,
+		y + s.Area.Min.Y,
+	}
+}
+
+func (s *RasterSubImage) Select(area image.Rectangle) *RasterSubImage {
 	if area.Min.X < 0 {
 		area.Min.X += s.Width() // Adjust for negative coordinates
 	}
@@ -157,22 +193,24 @@ func (s *RasterSubImage) SubImage(area image.Rectangle) *RasterSubImage {
 	if area.Max.Y < 0 {
 		area.Max.Y += s.Height() // Adjust for negative coordinates
 	}
-	area = area.Intersect(s.Area)
-	if area.Empty() {
-		return nil // Invalid area
-	}
-	// Adjust the area to be relative to the sub-image's bounds.
+	// Offset the area to the coordinates of the original image
 	adjustedArea := image.Rect(
 		area.Min.X+s.Area.Min.X,
 		area.Min.Y+s.Area.Min.Y,
 		area.Max.X+s.Area.Min.X,
 		area.Max.Y+s.Area.Min.Y,
 	)
+	// Intersect with the parent area to ensure it's within bounds
+	adjustedArea = adjustedArea.Intersect(s.Area)
+	if adjustedArea.Empty() {
+		return nil // Invalid area
+	}
+	fmt.Println("Selecting sub-image area:", adjustedArea)
 	return NewRasterSubImage(s.Original, adjustedArea)
 }
 
 // SubImage returns a sub-image of the original image defined by the area of this RasterSubImage.
-func (rs *RasterImage) SubImage(area image.Rectangle) *RasterSubImage {
+func (rs *RasterImage) Select(area image.Rectangle) *RasterSubImage {
 	if area.Min.X < 0 {
 		area.Min.X += rs.Width // Adjust for negative coordinates
 	}
@@ -185,11 +223,56 @@ func (rs *RasterImage) SubImage(area image.Rectangle) *RasterSubImage {
 	if area.Max.Y < 0 {
 		area.Max.Y += rs.Height // Adjust for negative coordinates
 	}
-	// Clamp the area to the bounds of the original image using Intersect
-	bounds := image.Rect(0, 0, rs.Width, rs.Height)
-	area = area.Intersect(bounds)
+	// Clamp values to valid ranges
+	if area.Min.X < 0 {
+		area.Min.X = 0
+	}
+	if area.Min.Y < 0 {
+		area.Min.Y = 0
+	}
+	if area.Max.X > rs.Width {
+		area.Max.X = rs.Width
+	}
+	if area.Max.Y > rs.Height {
+		area.Max.Y = rs.Height
+	}
+	// Ensure Min <= Max
+	if area.Min.X > area.Max.X {
+		area.Min.X = area.Max.X
+	}
+	if area.Min.Y > area.Max.Y {
+		area.Min.Y = area.Max.Y
+	}
+	fmt.Println("Selecting area:", area)
 	if area.Empty() {
 		return nil // Invalid area
 	}
 	return NewRasterSubImage(rs, area)
+}
+
+func (rs *RasterImage) SelectAll(area image.Rectangle) *RasterSubImage {
+	area = area.Intersect(image.Rect(0, 0, rs.Width, rs.Height))
+	return rs.Select(area)
+}
+
+func (rs *RasterImage) SelectRows(y1, y2 int) *RasterSubImage {
+	if y1 < 0 {
+		y1 += rs.Height // Adjust for negative coordinates
+	}
+	if y2 < 0 {
+		y2 += rs.Height // Adjust for negative coordinates
+	}
+	area := image.Rect(0, y1, rs.Width, y2)
+	return rs.Select(area)
+}
+
+func (rs *RasterImage) SelectCols(x1, x2 int) *RasterSubImage {
+	if x1 < 0 {
+		x1 += rs.Width // Adjust for negative coordinates
+	}
+	if x2 < 0 {
+		x2 += rs.Width // Adjust for negative coordinates
+	}
+	area := image.Rect(x1, 0, x2, rs.Height)
+	return rs.Select(area)
 }
