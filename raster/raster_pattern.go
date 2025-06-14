@@ -219,20 +219,15 @@ func (pattern *RasterPattern) IsMatch(img *RasterSubImage) bool {
 	if lower != 0 || upper != 0 {
 		ratio := img.BlackRatio()
 		if ratio > upper || ratio < lower {
-			if ratio != 0 {
-				fmt.Println("Black pixel ratio out of bounds:", ratio, "expected between", lower, "and", upper)
-			}
 			return false // 如果黑色像素比例不在范围内，返回 false
 		}
 	}
-
 	return true
 }
 
 func (pattern *RasterPattern) IsMatchAt(img *RasterSubImage, x, y int) bool {
 	subImage := img.Select(image.Rect(x, y, x+pattern.width, y+pattern.height))
 	if subImage == nil {
-		fmt.Println("Invalid sub-image at position:", x, y)
 		return false // 如果裁剪区域无效，返回 false
 	}
 	return pattern.IsMatch(subImage) // 检查裁剪区域是否与图案匹

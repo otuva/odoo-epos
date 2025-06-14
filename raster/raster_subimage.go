@@ -6,10 +6,8 @@ import (
 )
 
 type RasterSubImage struct {
-	// The original image from which this sub-image is derived.
 	Original *RasterImage
-	// The rectangle defining the area of the original image that this sub-image represents.
-	Area image.Rectangle
+	Area     image.Rectangle
 }
 
 // NewRasterSubImage creates a new RasterSubImage from the given original image and area.
@@ -48,51 +46,18 @@ func (s *RasterSubImage) Size() (width, height int) {
 }
 
 func (s *RasterSubImage) SetPixelBlack(x, y int) {
-	if x < 0 {
-		x = s.Width() + x // Adjust for negative coordinates
-	}
-	if y < 0 {
-		y = s.Height() + y // Adjust for negative coordinates
-	}
-	// Set the pixel at (x, y) in the sub-image to black.
-	if x >= s.Width() || y >= s.Height() {
-		return // Out of bounds
-	}
-	// Calculate the corresponding pixel in the original image.
 	originalX := x + s.Area.Min.X
 	originalY := y + s.Area.Min.Y
 	s.Original.SetPixelBlack(originalX, originalY)
 }
 
 func (s *RasterSubImage) SetPixelWhite(x, y int) {
-	if x < 0 {
-		x = s.Width() + x // Adjust for negative coordinates
-	}
-	if y < 0 {
-		y = s.Height() + y // Adjust for negative coordinates
-	}
-	// Set the pixel at (x, y) in the sub-image to white.
-	if x >= s.Width() || y >= s.Height() {
-		return // Out of bounds
-	}
-	// Calculate the corresponding pixel in the original image.
 	originalX := x + s.Area.Min.X
 	originalY := y + s.Area.Min.Y
 	s.Original.SetPixelWhite(originalX, originalY)
 }
 
 func (s *RasterSubImage) GetPixel(x, y int) int {
-	if x < 0 {
-		x = s.Width() + x // Adjust for negative coordinates
-	}
-	if y < 0 {
-		y = s.Height() + y // Adjust for negative coordinates
-	}
-	// Get the pixel value at (x, y) in the sub-image.
-	if x >= s.Width() || y >= s.Height() {
-		return 0 // Out of bounds, return white (0)
-	}
-	// Calculate the corresponding pixel in the original image.
 	originalX := x + s.Area.Min.X
 	originalY := y + s.Area.Min.Y
 	return s.Original.GetPixel(originalX, originalY)
@@ -181,12 +146,7 @@ func (s *RasterSubImage) GlobalPoint(x, y int) image.Point {
 
 func (s *RasterSubImage) Select(area image.Rectangle) *RasterSubImage {
 	// Offset the area to the coordinates of the original image
-	adjustedArea := image.Rect(
-		area.Min.X+s.Area.Min.X,
-		area.Min.Y+s.Area.Min.Y,
-		area.Max.X+s.Area.Min.X,
-		area.Max.Y+s.Area.Min.Y,
-	)
+	adjustedArea := area.Add(s.Area.Min)
 	// Intersect with the parent area to ensure it's within bounds
 	adjustedArea = adjustedArea.Intersect(s.Area)
 	if adjustedArea.Empty() {
