@@ -17,6 +17,7 @@ func (img *RasterImage) WithDrawText(text []rune, x, y int) *RasterImage {
 	if textImg == nil {
 		return img
 	}
+
 	return img.WithPaste(textImg, x, y) // 将文本图像粘贴到指定位置
 }
 
@@ -31,7 +32,6 @@ func NewRasterImageFromText(text []rune) *RasterImage {
 	img := &RasterImage{
 		Width:   width,
 		Height:  height,
-		Align:   "center",
 		Content: content,
 	}
 

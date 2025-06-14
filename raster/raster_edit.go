@@ -179,59 +179,15 @@ func (img *RasterImage) WithPaste(other *RasterImage, x, y int) *RasterImage {
 	if img == nil || other == nil || img.Width <= 0 || img.Height <= 0 || img.Content == nil || other.Content == nil {
 		return img
 	}
-	// 支持负数索引
-	if x < 0 {
-		x = img.Width + x
-	}
-	if y < 0 {
-		y = img.Height + y
-	}
 
-	if x < 0 || y < 0 || x >= img.Width || y >= img.Height {
-		return img // 粘贴起点超出原图范围
-	}
-
-	// 自动裁剪other的宽高，防止越界
-	maxWidth := img.Width - x
-	maxHeight := img.Height - y
-	pasteWidth := other.Width
-	pasteHeight := other.Height
-	if pasteWidth > maxWidth {
-		pasteWidth = maxWidth
-	}
-	if pasteHeight > maxHeight {
-		pasteHeight = maxHeight
-	}
-
-	newContent := make([]byte, len(img.Content))
-	copy(newContent, img.Content)
-
-	srcRowBytes := (other.Width + 7) / 8
-	dstRowBytes := (img.Width + 7) / 8
-	for row := 0; row < pasteHeight; row++ {
-		srcRowStart := row * srcRowBytes
-		dstRowStart := (y + row) * dstRowBytes
-		for col := 0; col < pasteWidth; col++ {
-			srcByteIdx := srcRowStart + col/8
-			dstByteIdx := dstRowStart + (x+col)/8
-			// 越界保护
-			if srcByteIdx >= len(other.Content) || dstByteIdx >= len(newContent) {
-				continue
-			}
-			srcBitIdx := 7 - (col % 8)
-			if (other.Content[srcByteIdx] & (1 << srcBitIdx)) != 0 {
-				dstBitIdx := 7 - ((x + col) % 8)
-				newContent[dstByteIdx] |= 1 << dstBitIdx
-			}
+	for dy := range make([]struct{}, other.Height) {
+		for dx := range make([]struct{}, other.Width) {
+			color := other.GetPixel(dx, dy)
+			img.setPixel(x+dx, y+dy, color)
 		}
 	}
 
-	return &RasterImage{
-		Width:   img.Width,
-		Height:  img.Height,
-		Align:   img.Align,
-		Content: newContent,
-	}
+	return img
 }
 
 // WithErase 返回擦除后的图像

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"math/bits"
 )
 
 // EPOSImage 表示图片数据
@@ -164,93 +163,6 @@ func (img *RasterImage) IsAllWhite() bool {
 	return true // 所有字节都是全白
 }
 
-// IsWhiteBorder 检查图像是否有白色边框
-// 如果图像为nil或内容为nil，则返回false
-func (img *RasterImage) IsWhiteBorder() bool {
-	// 检查图像是否为nil或内容为nil
-	if img == nil || img.Content == nil {
-		return false
-	}
-	// 检查上边框
-	for x := 0; x < img.Width; x++ {
-		if img.GetPixel(x, 0) != 0 { // 如果有任何像素不是白色，则返回false
-			return false
-		}
-	}
-	// 检查下边框
-	for x := 0; x < img.Width; x++ {
-		if img.GetPixel(x, img.Height-1) != 0 { // 如果有任何像素不是白色，则返回false
-			return false
-		}
-	}
-	// 检查左边框
-	for y := 0; y < img.Height; y++ {
-		if img.GetPixel(0, y) != 0 { // 如果有任何像素不是白色，则返回false
-			return false
-		}
-	}
-	// 检查右边框
-	for y := 0; y < img.Height; y++ {
-		if img.GetPixel(img.Width-1, y) != 0 { // 如果有任何像素不是白色，则返回false
-			return false
-		}
-	}
-	return true // 所有边框都是白色的
-}
-
-// BlackRatio 返回图像中黑色像素的比例
-// 如果图像为nil或内容为nil，则返回0
-// 计算黑色像素数与总像素数的比例
-// 黑色像素数是指内容中每个字节中1的个数
-// 总像素数是图像宽度*高度
-// 返回值范围在0到1之间，0表示全白，1表示全黑
-func (img *RasterImage) BlackRatio() float64 {
-	if img == nil || img.Content == nil {
-		return 0 // 无效图像
-	}
-	blackCount := 0
-	totalCount := len(img.Content) * 8 // 每个字节8位
-	for _, b := range img.Content {
-		blackCount += bits.OnesCount8(b) // 统计每个字节中的黑色像素数
-	}
-	ratio := float64(blackCount) / float64(totalCount)
-	return ratio
-}
-
-// IsSingelTextLine 检查图像是否为单行文本
-// 如果图像为nil或内容为nil，或高度或宽度小于等于0，则返回false
-// 检查图像的顶部和底部是否有非全白的行
-// 如果顶部和底部之间有非全白的行，则返回true
-// 如果顶部和底部之间没有非全白的行，则返回false
-// 注意：单行文本的定义是图像中只有一行非全白的内容
-func (img *RasterImage) IsSingleTextLine() bool {
-	if img == nil || img.Content == nil || img.Height <= 0 || img.Width <= 0 {
-		return false // 无效图像
-	}
-	top := 0
-	bottom := img.Height - 1
-
-	// 找到第一个非全白的行
-	for top < img.Height && img.IsWhiteLine(top) {
-		top++
-	}
-	// 找到最后一个非全白的行
-	for bottom >= top && img.IsWhiteLine(bottom) {
-		bottom--
-	}
-	// 检查是否有内容
-	if top > bottom {
-		return false
-	}
-	// 检查中间每一行都不是全白
-	for y := top; y <= bottom; y++ {
-		if img.IsWhiteLine(y) {
-			return false
-		}
-	}
-	return true
-}
-
 // IsWhiteLine 检查指定行是否全是白色
 // y: 行索引，从0开始
 func (img *RasterImage) IsWhiteLine(y int) bool {
@@ -277,73 +189,4 @@ func (img *RasterImage) IsWhiteColumn(x int) bool {
 		}
 	}
 	return true // 所有像素都是白色的
-}
-
-// CutCharactersByConnectivity 基于连通域分析切割字符
-func (img *RasterImage) CutCharacters() []*RasterImage {
-	if img == nil || img.Content == nil || img.Height <= 0 || img.Width <= 0 {
-		return nil // 无效图像
-	}
-	width, height := img.Width, img.Height
-	labels := make([][]int, height)
-	for i := range labels {
-		labels[i] = make([]int, width)
-	}
-	label := 1
-	type charRect struct{ minX, minY, maxX, maxY int }
-	regions := map[int]*charRect{}
-
-	// 8连通方向
-	dirs := [][2]int{{0, 1}, {1, 0}, {0, -1}, {-1, 0}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}}
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			if img.GetPixel(x, y) == 1 && labels[y][x] == 0 {
-				// 新连通域
-				queue := [][2]int{{x, y}}
-				labels[y][x] = label
-				r := &charRect{minX: x, minY: y, maxX: x, maxY: y}
-				for len(queue) > 0 {
-					cx, cy := queue[0][0], queue[0][1]
-					queue = queue[1:]
-					for _, d := range dirs {
-						nx, ny := cx+d[0], cy+d[1]
-						if nx >= 0 && nx < width && ny >= 0 && ny < height &&
-							img.GetPixel(nx, ny) == 1 && labels[ny][nx] == 0 {
-							labels[ny][nx] = label
-							queue = append(queue, [2]int{nx, ny})
-							// 更新外接矩形
-							if nx < r.minX {
-								r.minX = nx
-							}
-							if nx > r.maxX {
-								r.maxX = nx
-							}
-							if ny < r.minY {
-								r.minY = ny
-							}
-							if ny > r.maxY {
-								r.maxY = ny
-							}
-						}
-					}
-				}
-				regions[label] = r
-				label++
-			}
-		}
-	}
-
-	// 提取每个连通域的外接矩形
-	var characters []*RasterImage
-	for _, r := range regions {
-		w := r.maxX - r.minX + 1
-		h := r.maxY - r.minY + 1
-		if w > 0 && h > 0 {
-			charImg := img.WithCrop(r.minX, r.minY, w, h)
-			if charImg != nil {
-				characters = append(characters, charImg)
-			}
-		}
-	}
-	return characters
 }
