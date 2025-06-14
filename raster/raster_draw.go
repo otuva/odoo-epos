@@ -1,6 +1,8 @@
 package raster
 
-import "time"
+import (
+	"time"
+)
 
 // WithDrawText 在图像上绘制文本
 // text: 要绘制的文本内容
@@ -22,12 +24,12 @@ func (img *RasterImage) WithDrawText(text []rune, x, y int) *RasterImage {
 }
 
 func NewRasterImageFromText(text []rune) *RasterImage {
-	if len(text) == 0 {
-		return nil // 如果文本为空，返回nil
-	}
-	width := len(text) * 16                 // 每个字符宽度为16像素
-	height := 24                            // 每个字符高度为24像素
-	content := make([]byte, height*width/8) // 初始化内容
+	font := Fonts16x24 // 使用16x24像素的字体
+	charWidth := 16
+	charHeight := 24
+	width := len(text) * charWidth
+	height := charHeight
+	content := make([]byte, height*width/8)
 
 	img := &RasterImage{
 		Width:   width,
@@ -35,26 +37,17 @@ func NewRasterImageFromText(text []rune) *RasterImage {
 		Content: content,
 	}
 
-	for idx, r := range text {
-		charBytes, ok := Fonts16x24[r]
-		if !ok {
-			continue // 跳过不存在的字符
-		}
-		for row := 0; row < 24; row++ {
-			rowData := uint16(charBytes[row][0])<<8 | uint16(charBytes[row][1])
-			for col := 0; col < 16; col++ {
-				if rowData&(1<<(15-col)) != 0 {
-					// 设置像素为黑色
-					x := idx*16 + col
-					y := row
-					byteIndex := y*width/8 + x/8
-					bitIndex := 7 - (x % 8)
-					img.Content[byteIndex] |= 1 << bitIndex
-				}
+	for row := 0; row < charHeight; row++ {
+		for i, r := range text {
+			charBytes, ok := font[r]
+			if !ok {
+				charBytes = font[0] // 如果字符不存在，使用0值代替
 			}
+			// 每个字符一行2字节，拼接到目标内容
+			offset := row*width/8 + i*2
+			copy(img.Content[offset:offset+2], charBytes[row][:])
 		}
 	}
-
 	return img
 }
 
