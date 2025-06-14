@@ -1,7 +1,6 @@
 package raster
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 )
@@ -193,7 +192,6 @@ func (s *RasterSubImage) Select(area image.Rectangle) *RasterSubImage {
 	if adjustedArea.Empty() {
 		return nil // Invalid area
 	}
-	fmt.Println("Selecting sub-image area:", adjustedArea)
 	return NewRasterSubImage(s.Original, adjustedArea)
 }
 

@@ -261,10 +261,8 @@ func (pattern *RasterPattern) SearchFirstMatch(img *RasterSubImage) *RasterSubIm
 
 func (pattern *RasterPattern) SearchAllMatches(img *RasterSubImage) []*RasterSubImage {
 	if img == nil || pattern == nil || pattern.width <= 0 || pattern.height <= 0 {
-		fmt.Printf("Invalid image or pattern, %s, %d, %d", img, pattern.width, pattern.height)
 		return nil // 无效的图像或图案，返回 nil
 	}
-	fmt.Println("Searching for all matches of pattern at size", pattern.Size())
 
 	imgWidth, imgHeight := img.Width(), img.Height()
 	if imgWidth < pattern.width || imgHeight < pattern.height {
@@ -276,10 +274,8 @@ func (pattern *RasterPattern) SearchAllMatches(img *RasterSubImage) []*RasterSub
 	for y := 0; y <= imgHeight-pattern.height; y++ {
 		for x := 0; x <= imgWidth-pattern.width; x++ {
 			if isMatched(img.GlobalPoint(x, y), matches) {
-				fmt.Println("Position already matched:", x, y)
 				continue // 如果当前点已经在匹配区域内，跳过
 			}
-			fmt.Println("Checking position:", x, y)
 			if pattern.IsMatchAt(img, x, y) {
 				matches = append(matches, img.Select(image.Rect(x, y, x+pattern.width, y+pattern.height))) // 添加匹配的裁剪区域
 				x += pattern.width - 1                                                                     // 跳过已匹配的区域，避免重复匹配
@@ -293,7 +289,6 @@ func (pattern *RasterPattern) SearchAllMatches(img *RasterSubImage) []*RasterSub
 func isMatched(point image.Point, matches []*RasterSubImage) bool {
 	for _, img := range matches {
 		if point.In(img.Area) {
-			fmt.Println("Point is already matched in area:", img.Area)
 			return true // 如果点在某个裁剪区域内，返回 true
 		}
 	}
