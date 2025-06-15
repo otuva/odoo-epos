@@ -27,11 +27,11 @@ func (img *RasterImage) WithCrop(x, y, width, height int) *RasterImage {
 	widthBytes := (width + 7) / 8
 	croppedContent := make([]byte, height*widthBytes)
 
-	for row := 0; row < height; row++ {
+	for row := range height {
 		srcBitStart := (y+row)*img.Width + x
 		dstBitStart := row * width
 
-		for col := 0; col < width; col++ {
+		for col := range width {
 			// 计算源像素位置
 			srcIdx := srcBitStart + col
 			srcByte := img.Content[srcIdx/8]
@@ -180,8 +180,8 @@ func (img *RasterImage) WithPaste(other *RasterImage, x, y int) *RasterImage {
 		return img
 	}
 
-	for dy := range make([]struct{}, other.Height) {
-		for dx := range make([]struct{}, other.Width) {
+	for dy := range other.Height {
+		for dx := range other.Width {
 			color := other.GetPixel(dx, dy)
 			img.setPixel(x+dx, y+dy, color)
 		}
@@ -222,9 +222,9 @@ func (img *RasterImage) WithErase(x, y, width, height int) *RasterImage {
 	copy(newContent, img.Content)
 	widthBytes := (img.Width + 7) / 8
 
-	for row := 0; row < height; row++ {
+	for row := range height {
 		rowStart := (y + row) * widthBytes
-		for col := 0; col < width; col++ {
+		for col := range width {
 			byteIdx := rowStart + (x+col)/8
 			bitIdx := 7 - ((x + col) % 8)
 			newContent[byteIdx] &^= (1 << bitIdx)
@@ -237,116 +237,4 @@ func (img *RasterImage) WithErase(x, y, width, height int) *RasterImage {
 		Align:   img.Align,
 		Content: newContent,
 	}
-}
-
-// WithBorder 返回添加边框后的图像
-// borderWidth: 边框的宽度（单位为像素）
-// 如果图像无效（如宽度或高度小于等于0，或内容为nil），则返回原图像
-// 如果边框宽度小于等于0，则返回原图像
-// 添加边框后，图像的宽度和高度保持不变
-// 注意：边框会覆盖原图像的内容，原图像的内容将被边框覆盖
-func (img *RasterImage) WithBorder(borderWidth int) *RasterImage {
-	// 检查参数有效性
-	if img == nil || img.Width <= 0 || img.Height <= 0 || img.Content == nil || borderWidth <= 0 {
-		return img
-	}
-
-	newContent := make([]byte, len(img.Content))
-	copy(newContent, img.Content)
-	width := img.Width
-	height := img.Height
-	widthBytes := width / 8
-
-	// 上下边框
-	for row := 0; row < borderWidth; row++ {
-		rowStart := row * widthBytes
-		for i := 0; i < widthBytes; i++ {
-			newContent[rowStart+i] = 0xFF // 全黑
-		}
-		rowStart = (height - 1 - row) * widthBytes
-		for i := 0; i < widthBytes; i++ {
-			newContent[rowStart+i] = 0xFF // 全黑
-		}
-	}
-	// 左右边框
-	for row := borderWidth; row < height-borderWidth; row++ {
-		rowStart := row * widthBytes
-		for col := 0; col < borderWidth; col++ {
-			byteIdx := rowStart + col/8
-			bitIdx := 7 - (col % 8)
-			newContent[byteIdx] |= 1 << bitIdx // 左边
-			byteIdx = rowStart + (width-1-col)/8
-			bitIdx = 7 - ((width - 1 - col) % 8)
-			newContent[byteIdx] |= 1 << bitIdx // 右边
-		}
-	}
-
-	return &RasterImage{
-		Width:   img.Width,
-		Height:  img.Height,
-		Align:   img.Align,
-		Content: newContent,
-	}
-}
-
-// shiftContent 返回内容向左或向右移动指定的位数
-// shift: 正数表示向右移动，负数表示向左移动
-// 如果移动位数为0，则返回原图像
-func (img *RasterImage) shiftContent(shift int) *RasterImage {
-	if img == nil || img.Content == nil || img.Width <= 0 || img.Height <= 0 {
-		return img
-	}
-	if shift == 0 {
-		return img
-	}
-
-	widthBytes := img.Width / 8
-	newContent := make([]byte, len(img.Content))
-
-	if shift > 0 { // 向右移动
-		for row := 0; row < img.Height; row++ {
-			srcRowStart := row * widthBytes
-			dstRowStart := srcRowStart + shift/8
-			for col := 0; col < widthBytes-shift/8; col++ {
-				newContent[dstRowStart+col] = img.Content[srcRowStart+col]
-			}
-			// 填充左侧空白为0
-			for col := 0; col < shift/8; col++ {
-				newContent[srcRowStart+col] = 0
-			}
-		}
-	} else { // 向左移动
-		for row := 0; row < img.Height; row++ {
-			srcRowStart := row * widthBytes
-			dstRowStart := srcRowStart - (-shift / 8)
-			for col := -shift / 8; col < widthBytes; col++ {
-				newContent[dstRowStart+col] = img.Content[srcRowStart+col]
-			}
-			// 填充右侧空白为0
-			for col := widthBytes + shift/8; col < widthBytes; col++ {
-				newContent[srcRowStart+col] = 0
-			}
-		}
-	}
-
-	return &RasterImage{
-		Width:   img.Width,
-		Height:  img.Height,
-		Align:   img.Align,
-		Content: newContent,
-	}
-}
-
-func (img *RasterImage) WithShiftLeft(shift int) *RasterImage {
-	if shift <= 0 {
-		return img // 如果移动位数小于等于0，则返回原图像
-	}
-	return img.shiftContent(-shift) // 向左移动
-}
-
-func (img *RasterImage) WithShiftRight(shift int) *RasterImage {
-	if shift <= 0 {
-		return img // 如果移动位数小于等于0，则返回原图像
-	}
-	return img.shiftContent(shift) // 向右移动
 }

@@ -67,8 +67,14 @@ func (s *RasterSubImage) GetPointPixel(point image.Point) int {
 	return s.Original.GetPixel(point.X+s.Area.Min.X, point.Y+s.Area.Min.Y)
 }
 
-func (s *RasterSubImage) Crop() *RasterImage {
+func (s *RasterSubImage) Copy() *RasterImage {
 	return s.Original.WithCrop(s.Area.Min.X, s.Area.Min.Y, s.Width(), s.Height())
+}
+
+func (s *RasterSubImage) Cut() *RasterImage {
+	img := s.Copy()
+	s.FillWhite() // Fill the sub-image with white after cutting
+	return img
 }
 
 func (s *RasterSubImage) SetBorder() {
