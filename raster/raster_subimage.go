@@ -3,6 +3,7 @@ package raster
 import (
 	"image"
 	"image/color"
+	"iter"
 )
 
 type RasterSubImage struct {
@@ -159,6 +160,26 @@ func (s *RasterSubImage) Select(area image.Rectangle) *RasterSubImage {
 		return nil // Invalid area
 	}
 	return NewRasterSubImage(s.Original, adjustedArea)
+}
+
+func (s *RasterSubImage) Scan(pattern *RasterPattern) iter.Seq[*RasterSubImage] {
+	return iter.Seq[*RasterSubImage](func(yield func(*RasterSubImage) bool) {
+		if s == nil || pattern == nil || pattern.width <= 0 || pattern.height <= 0 {
+			return // Invalid sub-image or pattern
+		}
+		imgWidth, imgHeight := s.Width(), s.Height()
+		if imgWidth < pattern.width || imgHeight < pattern.height {
+			return // Sub-image too small for the pattern
+		}
+		for y := 0; y <= imgHeight-pattern.height; y++ {
+			for x := 0; x <= imgWidth-pattern.width; x++ {
+				rect := image.Rect(x, y, x+pattern.width, y+pattern.height)
+				if !yield(s.Select(rect)) {
+					return
+				}
+			}
+		}
+	})
 }
 
 // SubImage returns a sub-image of the original image defined by the area of this RasterSubImage.

@@ -234,14 +234,7 @@ func (pattern *RasterPattern) IsMatchAt(img *RasterSubImage, x, y int) bool {
 }
 
 func (pattern *RasterPattern) SearchFirstMatch(img *RasterSubImage) *RasterSubImage {
-	if img == nil || pattern == nil || pattern.width <= 0 || pattern.height <= 0 {
-		return nil // 无效的图像或图案，返回 nil
-	}
-
 	imgWidth, imgHeight := img.Width(), img.Height()
-	if imgWidth < pattern.width || imgHeight < pattern.height {
-		return nil // 如果图像尺寸小于图案尺寸，返回 nil
-	}
 
 	for y := 0; y <= imgHeight-pattern.height; y++ {
 		for x := 0; x <= imgWidth-pattern.width; x++ {
@@ -255,15 +248,7 @@ func (pattern *RasterPattern) SearchFirstMatch(img *RasterSubImage) *RasterSubIm
 }
 
 func (pattern *RasterPattern) SearchAllMatches(img *RasterSubImage) []*RasterSubImage {
-	if img == nil || pattern == nil || pattern.width <= 0 || pattern.height <= 0 {
-		return nil // 无效的图像或图案，返回 nil
-	}
-
 	imgWidth, imgHeight := img.Width(), img.Height()
-	if imgWidth < pattern.width || imgHeight < pattern.height {
-		return nil // 如果图像尺寸小于图案尺寸，返回 nil
-	}
-
 	var matches []*RasterSubImage
 
 	for y := 0; y <= imgHeight-pattern.height; y++ {
