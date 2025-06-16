@@ -238,3 +238,55 @@ func (img *RasterImage) WithErase(x, y, width, height int) *RasterImage {
 		Content: newContent,
 	}
 }
+
+func (img *RasterImage) WithInvert() *RasterImage {
+	if img == nil || img.Width <= 0 || img.Height <= 0 || img.Content == nil {
+		return img
+	}
+
+	newContent := make([]byte, len(img.Content))
+	for i, b := range img.Content {
+		newContent[i] = ^b // 按位取反
+	}
+
+	return &RasterImage{
+		Width:   img.Width,
+		Height:  img.Height,
+		Align:   img.Align,
+		Content: newContent,
+	}
+}
+
+// WithScaleY 按整数倍 scale 放大图像的高度
+func (img *RasterImage) WithScaleY(scale int) *RasterImage {
+	if img == nil || img.Width <= 0 || img.Height <= 0 || img.Content == nil || scale <= 0 {
+		return img
+	}
+
+	newHeight := img.Height * scale
+	newWidth := img.Width
+	widthBytes := (newWidth + 7) / 8
+	newContent := make([]byte, widthBytes*newHeight)
+
+	for y := 0; y < img.Height; y++ {
+		for sy := 0; sy < scale; sy++ {
+			dstY := y*scale + sy
+			for x := 0; x < newWidth; x++ {
+				color := img.GetPixel(x, y)
+				dstIdx := dstY*newWidth + x
+				dstByteIdx := dstIdx / 8
+				dstBitIdx := 7 - (dstIdx % 8)
+				if color != 0 {
+					newContent[dstByteIdx] |= 1 << dstBitIdx
+				}
+			}
+		}
+	}
+
+	return &RasterImage{
+		Width:   newWidth,
+		Height:  newHeight,
+		Align:   img.Align,
+		Content: newContent,
+	}
+}

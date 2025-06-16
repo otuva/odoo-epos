@@ -190,8 +190,8 @@ func (rs *RasterImage) Select(area image.Rectangle) *RasterSubImage {
 	return NewRasterSubImage(rs, area)
 }
 
-func (rs *RasterImage) SelectAll(area image.Rectangle) *RasterSubImage {
-	area = area.Intersect(image.Rect(0, 0, rs.Width, rs.Height))
+func (rs *RasterImage) SelectAll() *RasterSubImage {
+	area := image.Rect(0, 0, rs.Width, rs.Height)
 	return rs.Select(area)
 }
 

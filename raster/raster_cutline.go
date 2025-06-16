@@ -62,7 +62,20 @@ func (img *RasterImage) CutPages() []*RasterImage {
 	var currHeight int
 	foundCutline := false
 
-	for i := 0; i < img.Height; i++ {
+	// 忽略最后一行的 cutline
+	lastLineIsCutline := false
+	if img.Height > 0 {
+		lastLine := img.Content[(img.Height-1)*bytesPerRow : img.Height*bytesPerRow]
+		lastLineIsCutline = isCutline(lastLine)
+	}
+
+	// 只遍历到倒数第二行（如果最后一行是 cutline）
+	limit := img.Height
+	if lastLineIsCutline {
+		limit = img.Height - 1
+	}
+
+	for i := 0; i < limit; i++ {
 		line := img.Content[i*bytesPerRow : (i+1)*bytesPerRow]
 		if isCutline(line) {
 			foundCutline = true
