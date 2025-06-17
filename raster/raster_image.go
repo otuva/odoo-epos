@@ -96,7 +96,7 @@ func (img *RasterImage) GetRowContent(y int) []byte {
 // x, y: 像素的坐标
 // value: 像素值，1表示黑色，0表示白色
 // 如果坐标超出图像范围，则不做任何操作
-func (img *RasterImage) setPixel(x, y, value int) {
+func (img *RasterImage) SetPixel(x, y, value int) {
 	// 支持负数索引
 	if x < 0 {
 		x = img.Width + x
@@ -120,12 +120,12 @@ func (img *RasterImage) setPixel(x, y, value int) {
 
 // SetPixel 设置指定坐标的像素为白色
 func (img *RasterImage) SetPixelWhite(x, y int) {
-	img.setPixel(x, y, 0) // 设置为白色
+	img.SetPixel(x, y, 0) // 设置为白色
 }
 
 // SetPixel 设置指定坐标的像素为黑色
 func (img *RasterImage) SetPixelBlack(x, y int) {
-	img.setPixel(x, y, 1) // 设置为黑色
+	img.SetPixel(x, y, 1) // 设置为黑色
 }
 
 func (img *RasterImage) IsAllBlack() bool {

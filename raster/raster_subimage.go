@@ -69,7 +69,15 @@ func (s *RasterSubImage) GetPointPixel(point image.Point) int {
 }
 
 func (s *RasterSubImage) Copy() *RasterImage {
-	return s.Original.WithCrop(s.Area.Min.X, s.Area.Min.Y, s.Width(), s.Height())
+	content := make([]byte, s.Height()*s.Width()/8)
+	newImg := NewRasterImage(s.Width(), s.Height(), content)
+	for y := s.Area.Min.Y; y < s.Area.Max.Y; y++ {
+		for x := s.Area.Min.X; x < s.Area.Max.X; x++ {
+			pixel := s.Original.GetPixel(x, y)
+			newImg.SetPixel(pixel, x-s.Area.Min.X, y-s.Area.Min.Y)
+		}
+	}
+	return newImg
 }
 
 func (s *RasterSubImage) Cut() *RasterImage {

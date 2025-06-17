@@ -10,7 +10,8 @@ func init() {
 	Transformers["kitchen"] = func(input *raster.RasterImage) *raster.RasterImage {
 		var header *raster.RasterSubImage
 		if isKitchenCancelPattern(input) {
-			return input.WithInvert()
+			input.SelectAll().InvertPixel()
+			return input
 		} else if isKitchenAddPattern(input) {
 			header = input.Select(image.Rect(0, 0, input.Width, 185))
 		} else if isKitchenDuplicataPattern(input) {
