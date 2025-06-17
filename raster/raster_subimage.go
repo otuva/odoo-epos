@@ -107,7 +107,7 @@ func (s *RasterSubImage) FillWhite() {
 	}
 }
 
-func (s *RasterSubImage) Invert() {
+func (s *RasterSubImage) InvertPixel() {
 	// Invert the colors in the sub-image.
 	for y := s.Area.Min.Y; y < s.Area.Max.Y; y++ {
 		for x := s.Area.Min.X; x < s.Area.Max.X; x++ {
