@@ -108,3 +108,18 @@ F7Cg0IV54NGlT78UrX/hASMDGchABjKQgQw8L/AzAAD//3QuxCmigwBwAAAAAElFTkSuQmCC`
 	img := raster.NewRasterImageFromImage(pngImg)
 	return img
 }
+
+func getTable209() *raster.RasterImage {
+	const table209PNG = `iVBORw0KGgoAAAANSUhEUgAAAIAAAAAeAQMAAADenIS7AAAABlBMVEX///8AAABVwtN+AAABFklE
+QVR4nKzRMUs7MRgG8Cd980/vDy82g2DAWjs7ZTxQPFfB1VlHoYOO3cxZuE/h0FHq0rkgXBc/QycN
+uKnDfYDDyOXgwL0Zf3nyJLzB9pYQgHN/Ye/rcxACIFB6mt++b45f3jjuuXV9UE0m33BlBBIz1qbp
+MEhigpRCA4LBooFC9WCERhZ+/sdSlgQDDQvFzwuAjCTY3dV87B4S4QCxZKLyMFRUeo5wJ6nvoTEa
+TtvEhgkpNPh0GBP0GEst8IEkXsuKwEerJ8p9e6TgHpL7UI+QttC8lHGD7PIqAlGhYHABtfAmJvKZ
+GqfiFT3YFrCuM0+5kx1cL/+d7aDqn1stuilOcdIP3u53M7WQElYPtvNlvwEAAP//cVJEiXmv8XwA
+AAAASUVORK5CYII=
+`
+	pngData, _ := base64.StdEncoding.DecodeString(table209PNG)
+	pngImg, _ := png.Decode(bytes.NewReader(pngData))
+	img := raster.NewRasterImageFromImage(pngImg)
+	return img
+}
