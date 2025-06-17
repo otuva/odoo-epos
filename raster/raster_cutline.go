@@ -49,64 +49,38 @@ func isCutline(line []byte) bool {
 	return bytes.Equal(line, CUTLINE[:len(line)])
 }
 
-// CutPages 将图像内容按切割线分割成多个页面
-// 返回一个包含多个页面的切片，每个页面都是一个新的 *RasterImage 对象
 func (img *RasterImage) CutPages() []*RasterImage {
-	if img == nil || img.Content == nil || img.Height <= 0 {
-		return nil
-	}
-
-	bytesPerRow := img.Width / 8
 	var pages []*RasterImage
-	var currContent []byte
-	var currHeight int
-	foundCutline := false
+	var cutLines []int
 
-	// 忽略最后一行的 cutline
-	lastLineIsCutline := false
-	if img.Height > 0 {
-		lastLine := img.Content[(img.Height-1)*bytesPerRow : img.Height*bytesPerRow]
-		lastLineIsCutline = isCutline(lastLine)
-	}
-
-	// 只遍历到倒数第二行（如果最后一行是 cutline）
-	limit := img.Height
-	if lastLineIsCutline {
-		limit = img.Height - 1
-	}
-
-	for i := 0; i < limit; i++ {
-		line := img.Content[i*bytesPerRow : (i+1)*bytesPerRow]
-		if isCutline(line) {
-			foundCutline = true
-			// 当前页结束，保存
-			if currHeight > 0 {
-				pages = append(pages, &RasterImage{
-					Width:   img.Width,
-					Height:  currHeight,
-					Content: currContent,
-				})
-			}
-			// 开始新页
-			currContent = nil
-			currHeight = 0
-		} else {
-			currContent = append(currContent, line...)
-			currHeight++
+	for i := range img.Height {
+		row := img.GetRowContent(i)
+		if isCutline(row) {
+			cutLines = append(cutLines, i)
 		}
 	}
-	// 收尾：最后一页
-	if currHeight > 0 {
-		pages = append(pages, &RasterImage{
-			Width:   img.Width,
-			Height:  currHeight,
-			Content: currContent,
-		})
-	}
 
-	// 如果没有 cutline，返回原图
-	if !foundCutline {
+	if len(cutLines) == 0 {
+		// 如果没有找到切割线，返回原图作为唯一页面
 		return []*RasterImage{img}
 	}
+
+	for line := range cutLines {
+		start := 0
+		if line > 0 {
+			start = cutLines[line-1] + 1
+		}
+		end := cutLines[line]
+		if end > start {
+			pages = append(pages, img.SelectRows(start, end).Copy())
+		}
+	}
+
+	// 处理最后一段（如果最后一行不是cutline）
+	lastCut := cutLines[len(cutLines)-1] + 1
+	if lastCut < img.Height {
+		pages = append(pages, img.SelectRows(lastCut, img.Height).Copy())
+	}
+
 	return pages
 }
