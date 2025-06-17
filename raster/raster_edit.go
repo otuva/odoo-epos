@@ -15,47 +15,10 @@ func (img *RasterImage) WithCrop(area image.Rectangle) *RasterImage {
 // 如果删除范围超出原图范围，则返回原图像
 // 如果删除范围无效（如起始行大于结束行，或行数为0），也返回原图像
 func (img *RasterImage) WithDeleteRows(startRow, endRow int) *RasterImage {
-	if img == nil || img.Width <= 0 || img.Height <= 0 || img.Content == nil {
-		return nil
-	}
-	// 支持负数索引
-	if startRow < 0 {
-		startRow = img.Height + startRow
-	}
-	if endRow < 0 {
-		endRow = img.Height + endRow
-	}
-	if startRow < 0 {
-		startRow = 0
-	}
-	if endRow >= img.Height {
-		endRow = img.Height - 1
-	}
-	if startRow > endRow || startRow >= img.Height || endRow < 0 {
-		return img // 无需删除
-	}
-	widthBytes := img.Width / 8
-	newHeight := img.Height - (endRow - startRow + 1)
-	if newHeight <= 0 {
-		return nil // 全部删除
-	}
-	newContent := make([]byte, newHeight*widthBytes)
-	dstRow := 0
-	for row := 0; row < img.Height; row++ {
-		if row < startRow || row > endRow {
-			copy(
-				newContent[dstRow*widthBytes:(dstRow+1)*widthBytes],
-				img.Content[row*widthBytes:(row+1)*widthBytes],
-			)
-			dstRow++
-		}
-	}
-	return &RasterImage{
-		Width:   img.Width,
-		Height:  newHeight,
-		Align:   img.Align,
-		Content: newContent,
-	}
+	topSubImage := img.SelectRows(0, startRow).Copy()
+	bottomSubImage := img.SelectRows(endRow+1, img.Height).Copy()
+	return topSubImage.WithAppend(bottomSubImage)
+
 }
 
 // WithAppend 返回拼接后的图像
@@ -66,10 +29,10 @@ func (img *RasterImage) WithDeleteRows(startRow, endRow int) *RasterImage {
 // 拼接后的图像宽度与原图像相同
 func (img *RasterImage) WithAppend(other *RasterImage) *RasterImage {
 	if img == nil || other == nil || img.Width <= 0 || img.Height <= 0 || img.Content == nil {
-		return nil
+		return img
 	}
 	if other.Width != img.Width {
-		return nil // 宽度不匹配，无法拼接
+		return img // 宽度不匹配，无法拼接
 	}
 
 	newHeight := img.Height + other.Height
@@ -117,17 +80,10 @@ func (img *RasterImage) WithScaleY(scale int) *RasterImage {
 	newContent := make([]byte, widthBytes*newHeight)
 
 	for y := 0; y < img.Height; y++ {
-		for sy := 0; sy < scale; sy++ {
-			dstY := y*scale + sy
-			for x := 0; x < newWidth; x++ {
-				color := img.GetPixel(x, y)
-				dstIdx := dstY*newWidth + x
-				dstByteIdx := dstIdx / 8
-				dstBitIdx := 7 - (dstIdx % 8)
-				if color != 0 {
-					newContent[dstByteIdx] |= 1 << dstBitIdx
-				}
-			}
+		rowContent := img.GetRow(y)
+		for s := 0; s < scale; s++ {
+			start := (y*scale + s) * widthBytes
+			copy(newContent[start:start+widthBytes], rowContent)
 		}
 	}
 

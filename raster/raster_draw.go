@@ -5,17 +5,17 @@ import (
 )
 
 // WithDrawText 在图像上绘制文本
-// text: 要绘制的文本内容
+// s: 要绘制的文本内容
 // x, y: 文本的起始位置坐标
 // 返回值：返回一个新的RasterImage对象，包含绘制的文本
-func (img *RasterImage) WithDrawText(text []rune, x, y int) *RasterImage {
-	if img == nil || len(text) == 0 {
+func (img *RasterImage) WithDrawText(s string, x, y int) *RasterImage {
+	if img == nil || len(s) == 0 {
 		return img // 如果图像为nil或文本为空，直接返回原图像
 	}
 	if img.Width <= 0 || img.Height <= 0 || img.Content == nil {
 		return img // 如果图像无效，直接返回原图像
 	}
-	textImg := NewRasterImageFromText(text)
+	textImg := NewRasterImageFromText(s)
 	if textImg == nil {
 		return img
 	}
@@ -23,7 +23,8 @@ func (img *RasterImage) WithDrawText(text []rune, x, y int) *RasterImage {
 	return img.WithPaste(textImg, x, y) // 将文本图像粘贴到指定位置
 }
 
-func NewRasterImageFromText(text []rune) *RasterImage {
+func NewRasterImageFromText(s string) *RasterImage {
+	text := []rune(s)
 	font := Fonts16x24 // 使用16x24像素的字体
 	charWidth := 16
 	charHeight := 24
@@ -55,8 +56,7 @@ func NewRasterImageFromText(text []rune) *RasterImage {
 func NewOrderTimeText() *RasterImage {
 	now := time.Now()
 	timeStr := now.Format("2006-01-02 15:04:05")
-	runes := []rune(timeStr)
-	textImg := NewRasterImageFromText(runes)
+	textImg := NewRasterImageFromText(timeStr)
 
 	img := &RasterImage{
 		Width:   512,
@@ -65,5 +65,5 @@ func NewOrderTimeText() *RasterImage {
 		Align:   "center",               // 默认居中对齐
 	}
 
-	return img.WithPaste(textImg, 100, 15) // 将时间文本图像粘贴到指定位置
+	return img.WithPaste(textImg, 100, 190) // 将时间文本图像粘贴到指定位置
 }

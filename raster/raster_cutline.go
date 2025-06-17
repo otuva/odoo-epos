@@ -54,7 +54,7 @@ func (img *RasterImage) CutPages() []*RasterImage {
 	var cutLines []int
 
 	for i := range img.Height {
-		row := img.GetRowContent(i)
+		row := img.GetRow(i)
 		if isCutline(row) {
 			cutLines = append(cutLines, i)
 		}

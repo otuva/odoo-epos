@@ -77,7 +77,7 @@ func (img *RasterImage) GetPixel(x, y int) int {
 	return 0 // 白色像素
 }
 
-func (img *RasterImage) GetRowContent(y int) []byte {
+func (img *RasterImage) GetRow(y int) []byte {
 	// 检查y坐标是否在图像范围内
 	if y < 0 || y >= img.Height {
 		return nil // 超出范围，返回nil
