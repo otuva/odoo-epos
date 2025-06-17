@@ -65,5 +65,5 @@ func NewOrderTimeText() *RasterImage {
 		Align:   "center",               // 默认居中对齐
 	}
 
-	return img.WithPaste(textImg, 100, 190) // 将时间文本图像粘贴到指定位置
+	return img.WithPaste(textImg, 190, 15) // 将时间文本图像粘贴到指定位置
 }

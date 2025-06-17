@@ -12,7 +12,6 @@ linux/usr/local/odoo-epos/epos
 # photos
 *.jpg
 *.jpeg
-*.png
 
 # ssl certificates
 *.pem

@@ -15,10 +15,29 @@ func (img *RasterImage) WithCrop(area image.Rectangle) *RasterImage {
 // 如果删除范围超出原图范围，则返回原图像
 // 如果删除范围无效（如起始行大于结束行，或行数为0），也返回原图像
 func (img *RasterImage) WithDeleteRows(startRow, endRow int) *RasterImage {
-	topSubImage := img.SelectRows(0, startRow).Copy()
-	bottomSubImage := img.SelectRows(endRow+1, img.Height).Copy()
-	return topSubImage.WithAppend(bottomSubImage)
-
+	if startRow < 0 {
+		startRow += img.Height // 支持负数索引
+	}
+	if endRow < 0 {
+		endRow += img.Height // 支持负数索引
+	}
+	newHeight := img.Height - (endRow - startRow + 1)
+	if newHeight <= 0 || startRow < 0 || endRow < startRow || endRow >= img.Height {
+		return img // 无效的删除范围，返回原图像
+	}
+	newContent := make([]byte, newHeight*img.Width/8)
+	for y := 0; y < img.Height; y++ {
+		if y < startRow || y > endRow {
+			rowContent := img.GetRow(y)
+			copy(newContent[(y-(endRow-startRow+1))*img.Width/8:], rowContent)
+		}
+	}
+	return &RasterImage{
+		Width:   img.Width,
+		Height:  newHeight,
+		Align:   img.Align,
+		Content: newContent,
+	}
 }
 
 // WithAppend 返回拼接后的图像
@@ -61,7 +80,8 @@ func (img *RasterImage) WithPaste(other *RasterImage, x, y int) *RasterImage {
 	for dy := range other.Height {
 		for dx := range other.Width {
 			color := other.GetPixel(dx, dy)
-			img.SetPixel(x+dx, y+dy, color)
+			point := image.Point{x + dx, y + dy}
+			img.SetPixel(point, color)
 		}
 	}
 
