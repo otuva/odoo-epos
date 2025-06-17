@@ -91,6 +91,20 @@ func (s *RasterSubImage) Cut() *RasterImage {
 	return img
 }
 
+func (s *RasterSubImage) MovePixelRight(shift int) {
+	// Move all pixels in the sub-image to the right by the specified shift amount.
+	for y := s.Area.Min.Y; y < s.Area.Max.Y; y++ {
+		for x := s.Area.Min.X + shift; x < s.Area.Max.X; x++ {
+			if s.Original.GetPixel(x-shift, y) == 1 { // If pixel is black
+				s.Original.SetPixelBlack(x, y)
+			} else {
+				s.Original.SetPixelWhite(x, y)
+			}
+			s.Original.SetPixelWhite(x-shift, y)
+		}
+	}
+}
+
 func (s *RasterSubImage) SetBorder() {
 	// Set a border around the sub-image by setting the pixels at the edges to black.
 	for y := s.Area.Min.Y; y < s.Area.Max.Y; y++ {

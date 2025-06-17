@@ -16,14 +16,14 @@ type RasterImage struct {
 }
 
 func NewRasterImage(width, height int, content []byte) *RasterImage {
-	rowBytes := (width + 7) / 8
+	rowBytes := width / 8 // 只适用于宽度为8的倍数
 	if len(content) != height*rowBytes {
 		content = make([]byte, height*rowBytes)
 	}
 	return &RasterImage{
 		Width:   width,
 		Height:  height,
-		Align:   "center", // 默认居中对齐',
+		Align:   "center",
 		Content: content,
 	}
 }
@@ -58,19 +58,17 @@ func (img *RasterImage) At(x, y int) color.Color {
 // 返回值：1表示黑色像素，0表示白色像素
 // 如果坐标超出图像范围，则返回0（白色）
 func (img *RasterImage) GetPixel(x, y int) int {
-	// 支持负数索引
 	if x < 0 {
 		x = img.Width + x
 	}
 	if y < 0 {
 		y = img.Height + y
 	}
-	// 检查坐标是否在图像范围内
 	if x < 0 || x >= img.Width || y < 0 || y >= img.Height {
-		return 0 // 超出范围，返回白色（0）
+		return 0 // 超出范围，返回白色
 	}
-	// 计算像素所在的字节和位
-	byteIndex := (y * img.Width / 8) + (x / 8)
+	rowBytes := img.Width / 8
+	byteIndex := y*rowBytes + (x / 8)
 	bitIndex := 7 - (x % 8)
 	if img.Content[byteIndex]&(1<<bitIndex) != 0 {
 		return 1 // 黑色像素
@@ -82,7 +80,7 @@ func (img *RasterImage) GetRow(y int) []byte {
 	if y < 0 || y >= img.Height {
 		return nil
 	}
-	rowBytes := (img.Width + 7) / 8
+	rowBytes := img.Width / 8
 	byteIndex := y * rowBytes
 	if byteIndex+rowBytes > len(img.Content) {
 		return nil
@@ -90,10 +88,7 @@ func (img *RasterImage) GetRow(y int) []byte {
 	return img.Content[byteIndex : byteIndex+rowBytes]
 }
 
-// SetPixel 设置指定坐标的像素值
-// x, y: 像素的坐标
-// value: 像素值，1表示黑色，0表示白色
-// 如果坐标超出图像范围，则不做任何操作
+// SetPixel 设置指定坐标的像素值（只考虑宽度为8的倍数）
 func (img *RasterImage) SetPixel(point image.Point, value int) {
 	x := point.X
 	y := point.Y
@@ -106,7 +101,7 @@ func (img *RasterImage) SetPixel(point image.Point, value int) {
 	if x < 0 || x >= img.Width || y < 0 || y >= img.Height {
 		return
 	}
-	rowBytes := (img.Width + 7) / 8
+	rowBytes := img.Width / 8
 	byteIndex := y*rowBytes + (x / 8)
 	bitIndex := 7 - (x % 8)
 	if value == 1 {

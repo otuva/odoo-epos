@@ -21,11 +21,15 @@ func init() {
 }
 
 func withHideTime(input *raster.RasterImage) *raster.RasterImage {
-	timeArea := image.Rect(265, input.Height-37, 365, input.Height)
-	dateArea := image.Rect(150, input.Height-37, 265, input.Height)
+	timeArea := image.Rect(263, input.Height-37, 365, input.Height)
 	input.Select(timeArea).FillWhite()
-	dateImg := input.Select(dateArea).Cut()
-	input = input.WithPaste(dateImg, 180, input.Height-37)
+	offset := 40 // 偏移量，表示从左边开始的像素数
+	for y := input.Height - 37; y < input.Height; y++ {
+		for x := input.Width; x > offset; x-- {
+			pixel := input.GetPixel(x-offset, y)
+			input.SetPixel(image.Point{x, y}, pixel)
+		}
+	}
 	return input
 
 }
