@@ -1,8 +1,6 @@
 package raster
 
-import (
-	"time"
-)
+import "time"
 
 // WithDrawText 在图像上绘制文本
 // s: 要绘制的文本内容
@@ -51,15 +49,7 @@ func NewRasterImageFromText(s string) *RasterImage {
 // NewOrderTimeText 创建一个包含当前时间的文本图像
 func NewOrderTimeText() *RasterImage {
 	now := time.Now()
-	timeStr := now.Format("2006-01-02 15:04:05")
+	timeStr := now.Format("01/02 15:04")
 	textImg := NewRasterImageFromText(timeStr)
-
-	img := &RasterImage{
-		Width:   512,
-		Height:  60,
-		Content: make([]byte, 60*512/8), // 初始化内容
-		Align:   "center",               // 默认居中对齐
-	}
-
-	return img.WithPaste(textImg, 190, 15) // 将时间文本图像粘贴到指定位置
+	return textImg
 }

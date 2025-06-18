@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"image"
 	"image/png"
+	"time"
 
 	"github.com/xiaohao0576/odoo-epos/raster"
 )
@@ -13,24 +14,26 @@ func init() {
 	var cancelImg = getCancelImg()
 	Transformers["kitchen"] = func(input *raster.RasterImage) *raster.RasterImage {
 		var header *raster.RasterImage
-		var orderTime = raster.NewOrderTimeText()
 		if isKitchenCancelPattern(input) {
-			input = input.WithPaste(cancelImg, 0, 160).WithAppend(orderTime)
-			return input
+			input = input.WithPaste(cancelImg, 0, 160)
+			return input.AddMarginBottom(120)
 		} else if isKitchenAddPattern(input) {
-			header = input.Select(image.Rect(0, 110, input.Width, 160)).Copy()
+			header = input.Select(image.Rect(0, 110, input.Width, 190)).Copy()
 		} else if isKitchenDuplicataPattern(input) {
-			header = input.Select(image.Rect(0, 160, input.Width, 210)).Copy()
+			header = input.Select(image.Rect(0, 160, input.Width, 240)).Copy()
 		} else {
-			return input
+			return input.AddMarginBottom(120)
 		}
 		var orderLines = searchKitchenOrderLines(input)
-		input = input.WithCutline()
+		header = header.AddMarginBottom(30)
+		header.WithDrawText(time.Now().Format("01/02 15:04"), 0, 50)
+		header.WithDrawInvertText("DABAO-01", 300, 50)
 		for _, line := range orderLines {
+			input = input.WithAppend(header).WithCutline()
 			product := line.Copy().WithScaleY(2)
-			input = input.WithAppend(header).WithAppend(product).WithAppend(orderTime).WithCutline()
+			input = input.WithAppend(product)
 		}
-		return input
+		return input.AddMarginBottom(120)
 	}
 }
 

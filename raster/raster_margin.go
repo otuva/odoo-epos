@@ -51,7 +51,7 @@ func (img *RasterImage) AddMarginTop(margin int) {
 	img.Content = newContent
 }
 
-func (img *RasterImage) AddMarginBottom(margin int) {
+func (img *RasterImage) AddMarginBottom(margin int) *RasterImage {
 	if margin < 0 {
 		margin = 0
 	}
@@ -59,6 +59,7 @@ func (img *RasterImage) AddMarginBottom(margin int) {
 	newContent := make([]byte, len(img.Content)+margin*img.Width/8)
 	copy(newContent, img.Content)
 	img.Content = newContent
+	return img
 }
 
 func (img *RasterImage) AutoMarginLeft(paperWidth int) {
