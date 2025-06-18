@@ -16,7 +16,8 @@ type RasterImage struct {
 }
 
 func NewRasterImage(width, height int, content []byte) *RasterImage {
-	rowBytes := width / 8 // 只适用于宽度为8的倍数
+	width = (width + 7) &^ 7 // 向上取整，确保宽度是8的倍数
+	rowBytes := width / 8    // 只适用于宽度为8的倍数
 	if len(content) != height*rowBytes {
 		content = make([]byte, height*rowBytes)
 	}
@@ -58,6 +59,9 @@ func (img *RasterImage) At(x, y int) color.Color {
 // 返回值：1表示黑色像素，0表示白色像素
 // 如果坐标超出图像范围，则返回0（白色）
 func (img *RasterImage) GetPixel(x, y int) int {
+	if img.Width%8 != 0 {
+		panic("RasterImage width must be a multiple of 8 !")
+	}
 	if x < 0 {
 		x = img.Width + x
 	}
@@ -77,6 +81,9 @@ func (img *RasterImage) GetPixel(x, y int) int {
 }
 
 func (img *RasterImage) GetRow(y int) []byte {
+	if img.Width%8 != 0 {
+		panic("RasterImage width must be a multiple of 8 !")
+	}
 	if y < 0 || y >= img.Height {
 		return nil
 	}
@@ -90,6 +97,9 @@ func (img *RasterImage) GetRow(y int) []byte {
 
 // SetPixel 设置指定坐标的像素值（只考虑宽度为8的倍数）
 func (img *RasterImage) SetPixel(point image.Point, value int) {
+	if img.Width%8 != 0 {
+		panic("RasterImage width must be a multiple of 8 !")
+	}
 	x := point.X
 	y := point.Y
 	if x < 0 {

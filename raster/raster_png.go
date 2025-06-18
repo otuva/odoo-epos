@@ -1,6 +1,8 @@
 package raster
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
 	"image"
 	"image/color"
@@ -13,13 +15,7 @@ func NewRasterImageFromFile(filePath string) *RasterImage {
 	file, err := os.Open(filePath)
 	if err != nil {
 		fmt.Println("Failed to open file:", err)
-		return &RasterImage{
-			Width:    0,
-			Height:   0,
-			Align:    "center",
-			Content:  nil,      // 如果文件打开失败，返回空内容
-			filename: filePath, // 保存文件名以便后续使用
-		}
+		return nil
 	}
 	defer file.Close()
 
@@ -35,6 +31,22 @@ func NewRasterImageFromFile(filePath string) *RasterImage {
 	return result
 }
 
+func NewRasterImageFromBase64(base64Str string) *RasterImage {
+	pngData, err := base64.StdEncoding.DecodeString(base64Str)
+	if err != nil {
+		fmt.Println("Failed to decode base64 string:", err)
+		return nil
+	}
+	pngImg, err := png.Decode(bytes.NewReader(pngData))
+	if err != nil {
+		fmt.Println("Failed to decode PNG image from base64:", err)
+		return nil
+	}
+	// 创建RasterImage对象
+	img := NewRasterImageFromImage(pngImg)
+	return img
+}
+
 func (img *RasterImage) GetFilename() string {
 	if img == nil {
 		return ""
@@ -47,39 +59,32 @@ func NewRasterImageFromImage(img image.Image) *RasterImage {
 		return nil
 	}
 	bounds := img.Bounds()
-	width := bounds.Dx()
-	height := bounds.Dy()
-	// 保证宽度为8的倍数
-	if width%8 != 0 {
-		width = (width/8 + 1) * 8
-	}
+	imgWidth := bounds.Dx()
+	imgHeight := bounds.Dy()
+	width := (imgWidth + 7) &^ 7 // 向上取整，确保宽度是8的倍数
+	height := imgHeight          // 高度保持不变
 	content := make([]byte, height*width/8)
-
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			byteIndex := y*(width/8) + x/8
-			bitIndex := 7 - (x % 8)
-			var isBlack bool
-			if x < bounds.Dx() {
-				r, g, b, _ := img.At(bounds.Min.X+x, bounds.Min.Y+y).RGBA()
-				// 计算灰度值，范围0-65535
-				gray := (r*299 + g*587 + b*114) / 1000
-				isBlack = gray < 48000 // 只有灰度非常高（接近65535）才算白，其余都算黑
-			} else {
-				isBlack = false // 超出原图部分补白
-			}
-			if isBlack {
-				content[byteIndex] |= 1 << bitIndex
-			}
-		}
-	}
-
-	return &RasterImage{
+	rs := &RasterImage{
 		Width:   width,
 		Height:  height,
 		Align:   "center", // 默认居中对齐
 		Content: content,
 	}
+
+	for y := range imgHeight {
+		for x := range imgWidth {
+			var isBlack bool
+			r, g, b, _ := img.At(bounds.Min.X+x, bounds.Min.Y+y).RGBA()
+			// 计算灰度值，范围0-65535
+			gray := (r*299 + g*587 + b*114) / 1000
+			isBlack = gray < 48000 // 只有灰度非常高（接近65535）才算白，其余都算黑
+
+			if isBlack {
+				rs.SetPixelBlack(x, y)
+			}
+		}
+	}
+	return rs
 }
 
 // 将图像转换为1bit黑白image.Image接口
