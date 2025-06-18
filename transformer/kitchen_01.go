@@ -14,6 +14,7 @@ func init() {
 	var cancelImg = getCancelImg()
 	Transformers["kitchen"] = func(input *raster.RasterImage) *raster.RasterImage {
 		var header *raster.RasterImage
+		var isDabao = isTable31Pattern(input)
 		if isKitchenCancelPattern(input) {
 			input = input.WithPaste(cancelImg, 0, 160)
 			return input.AddMarginBottom(120)
@@ -27,7 +28,9 @@ func init() {
 		var orderLines = searchKitchenOrderLines(input)
 		header = header.AddMarginBottom(30)
 		header.WithDrawText(time.Now().Format("01/02 15:04"), 0, 50)
-		header.WithDrawInvertText("DABAO-01", 300, 50)
+		if isDabao {
+			header.WithDrawInvertText("DABAO", 300, 50)
+		}
 		for _, line := range orderLines {
 			input = input.WithAppend(header).WithCutline()
 			product := line.Copy().WithScaleY(2)
@@ -93,6 +96,18 @@ func searchKitchenOrderLines(input *raster.RasterImage) []*raster.RasterSubImage
 		}
 	}
 	return result
+}
+
+func isTable31Pattern(img *raster.RasterImage) bool {
+	var pattern = raster.NewRasterPattern(512, 240)
+	pattern.AddBlackPoints([]image.Point{
+		{226, 124}, {232, 125}, {232, 132}, {233, 140}, {253, 128}, {232, 143},
+		{257, 124}, {263, 131}, {259, 134}, {264, 140}, {233, 135},
+		{172, 136},
+	})
+	subImage := img.SelectAll()
+	match := pattern.IsMatchAt(subImage, 0, 0)
+	return match
 }
 
 func getCancelImg() *raster.RasterImage {
