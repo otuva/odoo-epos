@@ -4,6 +4,7 @@ package printer
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/xiaohao0576/odoo-epos/raster"
 	"github.com/xiaohao0576/odoo-epos/transformer"
@@ -41,8 +42,8 @@ func (p *USBPrinter) OpenCashBox() error {
 	if err != nil {
 		return fmt.Errorf("failed to reset printer: %w", err)
 	}
+	defer p.fd.Close()
 	p.fd.Write(p.cashDrawerCommand)
-	p.fd.Sync() // 确保数据写入
 	return nil
 }
 
@@ -52,25 +53,22 @@ func (p *USBPrinter) PrintRasterImage(img *raster.RasterImage) error {
 		return fmt.Errorf("failed to reset printer: %w", err)
 	}
 
+	defer p.fd.Close()
+
 	img = p.transformer(img) // 使用转换器转换图像
 	for _, page := range img.CutPages() {
 		page.AutoMarginLeft(p.paperWidth)
 		page.AddMarginBottom(p.marginBottom)
 		p.fd.Write(page.ToEscPosRasterCommand(1024))
-		p.fd.Write(p.cutCommand) // 切纸命令
-		p.fd.Sync()              // 确保数据写入
+		p.fd.Write(p.cutCommand)    // 切纸命令
+		time.Sleep(1 * time.Second) // 等待打印机处理
 	}
 
 	return nil
 }
 
 func (p *USBPrinter) Reset() error {
-	if p.fd == nil {
-		p.Open()
-		if p.fd == nil {
-			return fmt.Errorf("printer file descriptor is not open")
-		}
-	}
+	p.Open()
 	_, err := p.fd.Write([]byte{0x1B, 0x40}) // 初始化打印机
 	if err != nil {
 		p.fd.Close()
@@ -82,6 +80,7 @@ func (p *USBPrinter) Reset() error {
 
 func (p *USBPrinter) PrintRaw(data []byte) error {
 	err := p.Reset()
+	defer p.fd.Close()
 	if err != nil {
 		return fmt.Errorf("failed to reset printer: %w", err)
 	}
@@ -91,6 +90,5 @@ func (p *USBPrinter) PrintRaw(data []byte) error {
 	if _, err := p.fd.Write(data); err != nil {
 		return fmt.Errorf("failed to write data to printer: %w", err)
 	}
-	p.fd.Sync() // 确保数据写入
 	return nil
 }

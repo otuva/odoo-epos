@@ -29,7 +29,7 @@ func init() {
 		header = header.AddMarginBottom(30)
 		header.WithDrawText(time.Now().Format("01/02 15:04"), 0, 50)
 		if isDabao {
-			header.WithDrawInvertText("DABAO", 300, 50)
+			// header.WithDrawInvertText("DABAO", 300, 50)
 		}
 		for _, line := range orderLines {
 			input = input.WithAppend(header).WithCutline()

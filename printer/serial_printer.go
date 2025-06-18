@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/tarm/serial"
 	"github.com/xiaohao0576/odoo-epos/raster"
@@ -93,6 +94,7 @@ func (p *SerialPrinter) OpenCashBox() error {
 	if err != nil {
 		return fmt.Errorf("failed to reset printer: %w", err)
 	}
+	defer p.fd.Close()
 	p.fd.Write(p.cashDrawerCommand)
 	return nil
 }
@@ -102,23 +104,23 @@ func (p *SerialPrinter) PrintRasterImage(img *raster.RasterImage) error {
 	if err != nil {
 		return fmt.Errorf("failed to reset printer: %w", err)
 	}
+
+	defer p.fd.Close()
+
 	img = p.transformer(img) // 使用转换器转换图像
 	for _, page := range img.CutPages() {
 		page.AutoMarginLeft(p.paperWidth)
 		page.AddMarginBottom(p.marginBottom)
 		p.fd.Write(page.ToEscPosRasterCommand(1024))
-		p.fd.Write(p.cutCommand) // 切纸命令
+		p.fd.Write(p.cutCommand)    // 切纸命令
+		time.Sleep(1 * time.Second) // 等待打印机处理
 	}
+
 	return nil
 }
 
 func (p *SerialPrinter) Reset() error {
-	if p.fd == nil {
-		p.Open()
-		if p.fd == nil {
-			return fmt.Errorf("printer file descriptor is not open")
-		}
-	}
+	p.Open()
 	_, err := p.fd.Write([]byte{0x1B, 0x40}) // 初始化打印机
 	if err != nil {
 		p.fd.Close()
@@ -130,6 +132,7 @@ func (p *SerialPrinter) Reset() error {
 
 func (p *SerialPrinter) PrintRaw(data []byte) error {
 	err := p.Reset()
+	defer p.fd.Close()
 	if err != nil {
 		return fmt.Errorf("failed to reset printer: %w", err)
 	}

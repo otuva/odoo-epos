@@ -1,7 +1,6 @@
 package transformer
 
 import (
-	"fmt"
 	"image"
 
 	"github.com/xiaohao0576/odoo-epos/raster"
@@ -9,13 +8,11 @@ import (
 
 func init() {
 	Transformers["receipt"] = func(input *raster.RasterImage) *raster.RasterImage {
-		fmt.Printf("Original Image size: %dx%d\n", input.Width, input.Height)
 		header := raster.NewRasterImageFromFile("header.png")
 		table := input.SelectRows(380, 490).Copy()
 		img := input.WithDeleteRows(0, 580)
 		img = withHideTime(img)
 		result := header.WithAppend(table).WithAppend(img)
-		fmt.Printf("ReceiptTransformer: Result size: %dx%d\n", result.Width, result.Height)
 		return result
 	}
 }
