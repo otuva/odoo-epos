@@ -8,18 +8,14 @@ import (
 // s: 要绘制的文本内容
 // x, y: 文本的起始位置坐标
 // 返回值：返回一个新的RasterImage对象，包含绘制的文本
-func (img *RasterImage) WithDrawText(s string, x, y int) *RasterImage {
-	if img == nil || len(s) == 0 {
-		return img // 如果图像为nil或文本为空，直接返回原图像
-	}
-	if img.Width <= 0 || img.Height <= 0 || img.Content == nil {
-		return img // 如果图像无效，直接返回原图像
-	}
-	textImg := NewRasterImageFromText(s)
-	if textImg == nil {
-		return img
-	}
+func (img *RasterImage) WithDrawText(text string, x, y int) *RasterImage {
+	textImg := NewRasterImageFromText(text)
+	return img.WithPaste(textImg, x, y) // 将文本图像粘贴到指定位置
+}
 
+func (img *RasterImage) WithDrawInvertText(text string, x, y int) *RasterImage {
+	textImg := NewRasterImageFromText(text)
+	textImg.WithInvertPixel()           // 反转文本图像颜色
 	return img.WithPaste(textImg, x, y) // 将文本图像粘贴到指定位置
 }
 

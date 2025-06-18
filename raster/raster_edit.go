@@ -88,6 +88,22 @@ func (img *RasterImage) WithPaste(other *RasterImage, x, y int) *RasterImage {
 	return img
 }
 
+func (img *RasterImage) WithPasteTo(target *RasterImage, x, y int) *RasterImage {
+	// 检查参数有效性
+	if img == nil || target == nil || img.Width <= 0 || img.Height <= 0 || img.Content == nil || target.Content == nil {
+		return target
+	}
+
+	return target.WithPaste(img, x, y)
+}
+
+func (img *RasterImage) WithInvertPixel() *RasterImage {
+	for i, b := range img.Content {
+		img.Content[i] = ^b // 按位取反
+	}
+	return img
+}
+
 // WithScaleY 按整数倍 scale 放大图像的高度
 func (img *RasterImage) WithScaleY(scale int) *RasterImage {
 	if img == nil || img.Width <= 0 || img.Height <= 0 || img.Content == nil || scale <= 0 {
