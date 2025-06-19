@@ -72,9 +72,7 @@ func (s *RasterSubImage) Copy() *RasterImage {
 	if s.Area.Empty() {
 		return nil // If the area is empty, return nil
 	}
-	rowBytes := (s.Width() + 7) / 8
-	content := make([]byte, s.Height()*rowBytes)
-	newImg := NewRasterImage(s.Width(), s.Height(), content)
+	newImg := NewRasterImage(s.Width(), s.Height())
 	for y := s.Area.Min.Y; y < s.Area.Max.Y; y++ {
 		for x := s.Area.Min.X; x < s.Area.Max.X; x++ {
 			pixel := s.Original.GetPixel(x, y)

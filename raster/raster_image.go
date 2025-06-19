@@ -15,12 +15,11 @@ type RasterImage struct {
 	filename string // 可选的文件名，用于保存图片时使用
 }
 
-func NewRasterImage(width, height int, content []byte) *RasterImage {
+func NewRasterImage(width, height int) *RasterImage {
 	width = (width + 7) &^ 7 // 向上取整，确保宽度是8的倍数
 	rowBytes := width / 8    // 只适用于宽度为8的倍数
-	if len(content) != height*rowBytes {
-		content = make([]byte, height*rowBytes)
-	}
+	content := make([]byte, height*rowBytes)
+
 	return &RasterImage{
 		Width:   width,
 		Height:  height,
