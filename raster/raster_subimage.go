@@ -234,3 +234,60 @@ func (rs *RasterImage) SelectCols(x1, x2 int) *RasterSubImage {
 	area := image.Rect(x1, 0, x2, rs.Height)
 	return rs.Select(area)
 }
+
+func (rs *RasterSubImage) CutCharacters() []*RasterSubImage {
+	width, height := rs.Width(), rs.Height()
+	visited := make([][]bool, height)
+	for i := range visited {
+		visited[i] = make([]bool, width)
+	}
+	var chars []*RasterSubImage
+
+	dx := []int{-1, -1, -1, 0, 0, 1, 1, 1}
+	dy := []int{-1, 0, 1, -1, 1, -1, 0, 1}
+
+	for y := range height {
+		for x := range width {
+			if visited[y][x] || rs.GetPixel(x, y) == 0 {
+				continue
+			}
+			// BFS/DFS提取8连通区域
+			minX, minY, maxX, maxY := x, y, x, y
+			stack := []image.Point{{x, y}}
+			visited[y][x] = true
+			for len(stack) > 0 {
+				pt := stack[len(stack)-1]
+				stack = stack[:len(stack)-1]
+				// 更新边界
+				if pt.X < minX {
+					minX = pt.X
+				}
+				if pt.Y < minY {
+					minY = pt.Y
+				}
+				if pt.X > maxX {
+					maxX = pt.X
+				}
+				if pt.Y > maxY {
+					maxY = pt.Y
+				}
+				// 8方向
+				for d := range 8 {
+					nx, ny := pt.X+dx[d], pt.Y+dy[d]
+					if nx >= 0 && nx < width && ny >= 0 && ny < height &&
+						!visited[ny][nx] && rs.GetPixel(nx, ny) == 1 {
+						visited[ny][nx] = true
+						stack = append(stack, image.Point{nx, ny})
+					}
+				}
+			}
+			// 生成字符子图
+			rect := image.Rect(minX, minY, maxX+1, maxY+1)
+			sub := rs.Select(rect)
+			if sub != nil {
+				chars = append(chars, sub)
+			}
+		}
+	}
+	return chars
+}
