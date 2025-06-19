@@ -15,7 +15,7 @@ func init() {
 			return input
 		}
 		for i, number := range orderNumber {
-			input = input.WithPaste(number.Copy(), i*30+8, 8)
+			number.PasteTo(input, 8+i*40, 8) // 每个数字占36像素高度
 			for c, pattern := range numberPatterns {
 				if matched := pattern.SearchFirstMatch(number); matched != nil {
 					fmt.Println("找到数字:", matched.Area, "匹配的数字:", c)

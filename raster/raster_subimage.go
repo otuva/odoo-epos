@@ -90,8 +90,14 @@ func (s *RasterSubImage) Cut() *RasterImage {
 }
 
 func (s *RasterSubImage) PasteTo(target *RasterImage, x, y int) *RasterImage {
-	return target.WithPaste(s.Original, x, y)
-
+	for dy := range s.Height() {
+		for dx := range s.Width() {
+			color := s.GetPixel(dx, dy)
+			point := image.Point{x + dx, y + dy}
+			target.SetPixel(point, color)
+		}
+	}
+	return target
 }
 
 func (s *RasterSubImage) SetBorder() {
