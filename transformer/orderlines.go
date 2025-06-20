@@ -7,6 +7,8 @@ import (
 	"github.com/xiaohao0576/odoo-epos/raster"
 )
 
+var NumberOCR *raster.RasterOCR
+
 func init() {
 	Transformers["reprint"] = func(input *raster.RasterImage) *raster.RasterImage {
 		var orderNumber = getOrderNumber(input.SelectAll())
@@ -16,12 +18,11 @@ func init() {
 		}
 		for i, number := range orderNumber {
 			number.PasteTo(input, 8+i*40, 8) // 每个数字占36像素高度
-			for c, pattern := range numberPatterns {
-				if matched := pattern.SearchFirstMatch(number); matched != nil {
-					fmt.Println("找到数字:", matched.Area, "匹配的数字:", c)
-					break // 找到第一个匹配的数字就停止
-				}
+			for c, img := range NumberOCR.CharImages() {
+				rate := img.MatchIn(number)
+				fmt.Printf("Char: %s, Rate: %4f\n", c, rate)
 			}
+			fmt.Println("Next.......")
 		}
 		return input
 	}
@@ -55,69 +56,27 @@ func getOrderNumber(input *raster.RasterSubImage) []*raster.RasterSubImage {
 	return numbers
 }
 
-var numberPatterns = map[string]*raster.RasterPattern{}
-
 func init() {
-	// 预定义数字的图案
-	numberPatterns["0"] = raster.NewRasterPattern(14, 23)
-	numberPatterns["0"].AddWhiteArea(image.Rect(4, 5, 9, 18))
-	numberPatterns["0"].AddBlackArea(image.Rect(0, 5, 2, 18))
-	numberPatterns["0"].AddBlackArea(image.Rect(11, 4, 13, 19))
-
-	numberPatterns["1"] = raster.NewRasterPattern(9, 23)
-	numberPatterns["1"].AddWhiteArea(image.Rect(0, 7, 6, 23))
-	numberPatterns["1"].AddBlackArea(image.Rect(6, 1, 9, 23))
-	numberPatterns["1"].AddBlackPoints([]image.Point{{2, 3}, {3, 3}, {4, 3}, {5, 3}})
-	numberPatterns["1"].AddWhitePoints([]image.Point{{0, 0}, {1, 0}, {0, 1}})
-
-	numberPatterns["2"] = raster.NewRasterPattern(14, 23)
-	numberPatterns["2"].AddWhiteArea(image.Rect(0, 8, 3, 17))
-	numberPatterns["2"].AddWhiteArea(image.Rect(0, 8, 6, 14))
-	numberPatterns["2"].AddWhiteArea(image.Rect(5, 4, 9, 10))
-	numberPatterns["2"].AddWhiteArea(image.Rect(10, 15, 14, 19))
-	numberPatterns["2"].AddBlackArea(image.Rect(2, 21, 13, 23))
-
-	numberPatterns["3"] = raster.NewRasterPattern(14, 23)
-	numberPatterns["3"].AddWhiteArea(image.Rect(0, 7, 9, 8))
-	numberPatterns["3"].AddWhiteArea(image.Rect(0, 7, 3, 16))
-	numberPatterns["3"].AddWhiteArea(image.Rect(0, 14, 9, 16))
-	numberPatterns["3"].AddWhiteArea(image.Rect(5, 14, 9, 19))
-	numberPatterns["3"].AddWhiteArea(image.Rect(5, 4, 9, 8))
-	numberPatterns["3"].AddBlackArea(image.Rect(6, 10, 10, 12))
-	numberPatterns["3"].AddBlackArea(image.Rect(11, 3, 13, 9))
-
-	numberPatterns["4"] = raster.NewRasterPattern(15, 23)
-	numberPatterns["4"].AddWhiteArea(image.Rect(0, 0, 7, 3))
-	numberPatterns["4"].AddWhiteArea(image.Rect(0, 0, 3, 9))
-	numberPatterns["4"].AddWhiteArea(image.Rect(6, 11, 9, 14))
-	numberPatterns["4"].AddBlackArea(image.Rect(10, 2, 13, 23))
-	numberPatterns["4"].AddBlackArea(image.Rect(4, 16, 13, 18))
-
-	numberPatterns["5"] = raster.NewRasterPattern(13, 23)
-	numberPatterns["5"].AddWhiteArea(image.Rect(4, 4, 13, 7))
-	numberPatterns["5"].AddWhiteArea(image.Rect(0, 13, 8, 16))
-	numberPatterns["5"].AddWhiteArea(image.Rect(4, 12, 7, 19))
-
-	numberPatterns["6"] = raster.NewRasterPattern(14, 23)
-	numberPatterns["6"].AddWhiteArea(image.Rect(4, 13, 9, 17))
-	numberPatterns["6"].AddWhiteArea(image.Rect(6, 5, 14, 7))
-	numberPatterns["6"].AddWhiteArea(image.Rect(0, 0, 3, 2))
-
-	numberPatterns["7"] = raster.NewRasterPattern(15, 23)
-	numberPatterns["7"].AddWhiteArea(image.Rect(0, 4, 3, 23))
-	numberPatterns["7"].AddWhiteArea(image.Rect(0, 4, 7, 11))
-
-	numberPatterns["8"] = raster.NewRasterPattern(13, 23)
-	numberPatterns["8"].AddWhiteArea(image.Rect(5, 4, 8, 8))
-	numberPatterns["8"].AddWhiteArea(image.Rect(4, 5, 9, 8))
-	numberPatterns["8"].AddWhiteArea(image.Rect(4, 15, 9, 19))
-	numberPatterns["8"].AddBlackArea(image.Rect(4, 10, 10, 12))
-
-	numberPatterns["9"] = raster.NewRasterPattern(13, 23)
-	numberPatterns["9"].AddWhiteArea(image.Rect(4, 5, 9, 11))
-	numberPatterns["9"].AddWhiteArea(image.Rect(0, 17, 8, 18))
-	numberPatterns["9"].AddWhiteArea(image.Rect(0, 15, 1, 23))
-	numberPatterns["9"].AddBlackArea(image.Rect(12, 5, 13, 16))
-	numberPatterns["9"].AddBlackArea(image.Rect(0, 13, 2, 21))
-
+	NumberOCR = &raster.RasterOCR{
+		PngBase64: `iVBORw0KGgoAAAANSUhEUgAAAKAAAAAXAQMAAAC2ztajAAAABlBMVEX///8AAABVwtN+AAABVUlE
+QVR4nCzOMY7UQBCF4WeVmCKwqlMHb+2NiRx2MDA3WRGS4dBCI21PRMgFkDgAZwD6CBxggxqNROwE
+yUHLXtm76ae/Sg/iuO+gGU1Y0JzWyyQZYa78MXcTjmFFOa1fS5jQnYP/9/cjzmGpyruf3x7aAran
+a56GI841JEMsHIlovOZhIEoNBZQaW8TD/S0NzuqJCDv2hl5xSz1YPdUwwCi9IR7gGED5TtQban/Y
+yh2Vd3/5CbVtGDf8iFHZzXcFDBbtpXSdjN3v7g8aLa/nVVYn2baKKCXafi7pzUhucxDDQ/thLzXh
+GDeUNJh2y14qwP4VqfoP/QHeAvWXXxBKcsrl5ScBPq576Y0kQzR4hNef10Ypl0xJ3HHAQLBRkypT
+QNDgviPNVBI1jWiPuPrbccS2/YekrtMJYcZ1nU8TGIosAl2CQx23tYQMylTNCpkVzwEAAP//jld8
+GsNkBdYAAAAASUVORK5CYII=`,
+		CharAreas: map[string]image.Rectangle{
+			"0": image.Rect(2, 0, 15, 23),
+			"1": image.Rect(18, 0, 27, 23),
+			"2": image.Rect(30, 0, 45, 23),
+			"3": image.Rect(48, 0, 62, 23),
+			"4": image.Rect(65, 0, 80, 23),
+			"5": image.Rect(83, 0, 96, 23),
+			"6": image.Rect(99, 0, 113, 23),
+			"7": image.Rect(114, 0, 129, 23),
+			"8": image.Rect(131, 0, 144, 23),
+			"9": image.Rect(146, 0, 159, 23),
+		},
+	}
 }
