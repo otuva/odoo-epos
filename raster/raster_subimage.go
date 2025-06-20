@@ -295,3 +295,25 @@ func (rs *RasterSubImage) CutCharacters() []*RasterSubImage {
 	}
 	return chars
 }
+
+func (img *RasterSubImage) Similarity(img2 *RasterSubImage) float64 {
+	if img.Width() != img2.Width() || img.Height() != img2.Height() {
+		return -1
+	}
+	totalPoint := img.Width() * img.Height()
+	if totalPoint == 0 {
+		return -1
+	}
+	diff := 0
+	for x := range img.Width() {
+		for y := range img.Height() {
+			if img.GetPixel(x, y) != img2.GetPixel(x, y) {
+				diff++
+				if diff > totalPoint/2 { //差异超过一半就退出
+					return -1
+				}
+			}
+		}
+	}
+	return 1 - float64(diff)/float64(totalPoint)
+}
