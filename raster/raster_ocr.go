@@ -38,5 +38,11 @@ func (ocr *RasterOCR) CharImages() iter.Seq2[string, *RasterSubImage] {
 }
 
 func (ocr *RasterOCR) Recognize(img *RasterSubImage) string {
-	return ""
+	for c, charImg := range ocr.CharImages() {
+		_, rate := charImg.MatchIn(img)
+		if rate > 0.9 { // 假设匹配率大于0.9认为是匹配成功
+			return c
+		}
+	}
+	return "?" // 如果没有匹配成功，返回一个默认值
 }

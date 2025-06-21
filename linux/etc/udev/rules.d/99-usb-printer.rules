@@ -4,3 +4,4 @@
 
 KERNEL=="lp[0-9]*", SUBSYSTEM=="usbmisc", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5743", SYMLINK+="xp-n160ii"
 KERNEL=="lp[0-9]*", SUBSYSTEM=="usbmisc", ATTRS{idVendor}=="1fc9", ATTRS{idProduct}=="2016", SYMLINK+="xp-n160ii"
+KERNEL=="lp[0-9]*", SUBSYSTEM=="usbmisc", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5720", SYMLINK+="sp-pos891"

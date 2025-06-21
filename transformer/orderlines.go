@@ -16,41 +16,24 @@ func init() {
 		if orderNumber == nil {
 			return input
 		}
-		for i, number := range orderNumber {
-			number.PasteTo(input, 8+i*40, 8) // 每个数字占36像素高度
-			for c, img := range NumberOCR.CharImages() {
-				rate := img.MatchIn(number)
-				fmt.Printf("Char: %s, Rate: %4f\n", c, rate)
-			}
-			fmt.Println("Next.......")
+		var trackingNumber string
+		for _, number := range orderNumber {
+			char := NumberOCR.Recognize(number)
+			trackingNumber += char
 		}
+		fmt.Printf("Tracking Number: %s\n", trackingNumber)
 		return input
 	}
 }
 
 func getOrderNumber(input *raster.RasterSubImage) []*raster.RasterSubImage {
-	numberSignPattern := raster.NewRasterPattern(24, 36)
-	numberSignPattern.AddWhiteRows([]int{0, 1, 2, 3, 4, 5})
-	numberSignPattern.AddWhiteRows([]int{35, 34, 33, 32, 31, 30})
-	numberSignPattern.AddWhiteColumns([]int{0, 1, 2})
-	numberSignPattern.AddWhiteColumns([]int{23, 22, 21})
-	numberSignPattern.AddWhitePoints([]image.Point{
-		{5, 10}, {7, 10}, {5, 8}, {7, 8}, {14, 7}, {14, 8}, {14, 9}, {19, 9},
-		{6, 16}, {6, 17}, {6, 18}, {12, 16}, {12, 17}, {12, 18},
-		{10, 24}, {10, 25}, {10, 26}, {10, 27}, {10, 28}, {18, 16}, {18, 17}, {18, 18},
-	})
-	numberSignPattern.AddBlackPoints([]image.Point{
-		{10, 7}, {10, 8}, {10, 9}, {10, 10}, {10, 11}, {10, 12}, {10, 13}, {10, 14},
-		{16, 8}, {16, 9}, {16, 10}, {16, 11}, {16, 12}, {16, 13}, {16, 14}, {16, 15},
-		{6, 13}, {7, 13}, {8, 13}, {9, 13}, {11, 13}, {12, 13}, {13, 13}, {14, 13}, {15, 13},
-		{17, 13}, {18, 13}, {19, 13}, {8, 17}, {8, 18}, {8, 19}, {8, 20}, {8, 21}, {8, 22}, {8, 23},
-		{14, 18}, {14, 19}, {14, 20}, {14, 21}, {14, 22}, {14, 23}, {14, 24}, {14, 25}, {14, 26},
-	})
-	numberSign := numberSignPattern.SearchFirstMatch(input)
-	if numberSign == nil {
-		return nil
-	}
-	numberArea := image.Rect(numberSign.Area.Max.X, numberSign.Area.Min.Y, numberSign.Area.Max.X+100, numberSign.Area.Max.Y)
+	numberSignString := `iVBORw0KGgoAAAANSUhEUgAAABIAAAAXAQMAAAA8zY2nAAAABlBMVEUAAAD///+l2Z/dAAAAAWJL
+R0QAiAUdSAAAAAlwSFlzAAALEwAACxMBAJqcGAAAAEtJREFUCNdj+Fd5gAGE/4Don0C6EIg/H2D4
+8fEAQwMDAxA7MPwE8n8+B+LHEPojEAe6HgDKHmBY1OrA8Pn8AYbHQPwchPuBeD4YAwDcoDDpTcS/
+xQAAAABJRU5ErkJggg==`
+	numberSign := raster.NewSubImageFromBase64(numberSignString)
+	subImg, _ := numberSign.MatchIn(input.Original.SelectAll())
+	numberArea := image.Rect(subImg.Area.Max.X+3, subImg.Area.Min.Y, subImg.Area.Max.X+100, subImg.Area.Max.Y)
 	numberSubImage := input.Original.Select(numberArea)
 	numbers := numberSubImage.CutCharacters()
 	return numbers

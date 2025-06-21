@@ -1,8 +1,11 @@
 package raster
 
 import (
+	"bytes"
+	"encoding/base64"
 	"image"
 	"image/color"
+	"image/png"
 	"iter"
 )
 
@@ -16,6 +19,18 @@ func NewRasterSubImage(original *RasterImage, area image.Rectangle) *RasterSubIm
 	return &RasterSubImage{
 		Original: original,
 		Area:     area,
+	}
+}
+
+// NewSubImageFromFile creates a new RasterSubImage from a PNG file.
+func NewSubImageFromBase64(base64Str string) *RasterSubImage {
+	pngData, _ := base64.StdEncoding.DecodeString(base64Str)
+	pngImg, _ := png.Decode(bytes.NewReader(pngData))
+	original := NewRasterImageFromImage(pngImg)
+
+	return &RasterSubImage{
+		Original: original,
+		Area:     pngImg.Bounds(),
 	}
 }
 
@@ -305,11 +320,12 @@ func (img *RasterSubImage) MatchWith(img2 *RasterSubImage) float64 {
 		return -1
 	}
 	diff := 0
+	maxDiff := totalPoint / 10 // 允许的最大差异点数，10% 的像素可以不同
 	for x := range img.Width() {
 		for y := range img.Height() {
 			if img.GetPixel(x, y) != img2.GetPixel(x, y) {
 				diff++
-				if diff > 50 { //差异超过50个像素就退出
+				if diff > maxDiff { //差异超过10%，直接返回-1
 					return -1
 				}
 			}
@@ -318,7 +334,7 @@ func (img *RasterSubImage) MatchWith(img2 *RasterSubImage) float64 {
 	return 1 - float64(diff)/float64(totalPoint)
 }
 
-func (img *RasterSubImage) MatchIn(other *RasterSubImage) float64 {
+func (img *RasterSubImage) MatchIn(other *RasterSubImage) (*RasterSubImage, float64) {
 	var result float64 = -1.0
 	for y := 0; y <= other.Height()-img.Height(); y++ {
 		for x := 0; x <= other.Width()-img.Width(); x++ {
@@ -328,10 +344,10 @@ func (img *RasterSubImage) MatchIn(other *RasterSubImage) float64 {
 			}
 			rate := img.MatchWith(sub)
 			result = max(result, rate)
-			if result >= 0.95 {
-				return result // 如果匹配率超过95%，直接返回
+			if result > 0.9 {
+				return sub, result // 如果匹配率超过90%，直接返回
 			}
 		}
 	}
-	return result
+	return nil, result // 如果没有找到匹配，返回nil和匹配率
 }
