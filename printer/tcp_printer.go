@@ -68,13 +68,16 @@ func (p *TCPPrinter) OpenCashBox() error {
 }
 
 func (p *TCPPrinter) PrintRasterImage(img *raster.RasterImage) error {
+	img = p.transformer(img) // 使用转换器转换图像
+	if img == nil {
+		return nil // 如果转换器返回 nil，表示不需要打印图像
+	}
 	if p.fd == nil {
 		if err := p.Open(); err != nil {
 			return err
 		}
 	}
 	defer p.Close()
-	img = p.transformer(img) // 使用转换器转换图像
 	for _, page := range img.CutPages() {
 		page.AutoMarginLeft(p.paperWidth)
 		page.AddMarginBottom(p.marginBottom)

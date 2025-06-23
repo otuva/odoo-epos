@@ -31,6 +31,9 @@ func (p FilePrinter) PrintRasterImage(img *raster.RasterImage) error {
 		filename = fmt.Sprintf("%s/%s.png", p.dir, time.Now().Format("20060102-150405"))
 	}
 	img = p.transformer(img) // 使用转换器转换图像
+	if img == nil {
+		return nil // 如果转换器返回 nil，表示不需要保存图像
+	}
 	return img.SaveToPngFile(filename)
 }
 

@@ -48,14 +48,15 @@ func (p *USBPrinter) OpenCashBox() error {
 }
 
 func (p *USBPrinter) PrintRasterImage(img *raster.RasterImage) error {
+	img = p.transformer(img) // 使用转换器转换图像
+	if img == nil {
+		return nil // 如果转换器返回 nil，表示不需要打印图像
+	}
 	err := p.Reset()
 	if err != nil {
 		return fmt.Errorf("failed to reset printer: %w", err)
 	}
-
 	defer p.fd.Close()
-
-	img = p.transformer(img) // 使用转换器转换图像
 	for _, page := range img.CutPages() {
 		page.AutoMarginLeft(p.paperWidth)
 		page.AddMarginBottom(p.marginBottom)

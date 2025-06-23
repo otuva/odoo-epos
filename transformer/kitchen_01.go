@@ -21,7 +21,7 @@ func init() {
 		} else if isKitchenAddPattern(input) {
 			header = input.Select(image.Rect(0, 110, input.Width, 190)).Copy()
 		} else if isKitchenDuplicataPattern(input) {
-			header = input.Select(image.Rect(0, 160, input.Width, 240)).Copy()
+			return nil // 取消打印
 		} else {
 			return input.AddMarginBottom(120)
 		}

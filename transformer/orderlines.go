@@ -1,8 +1,8 @@
 package transformer
 
 import (
-	"fmt"
 	"image"
+	"os/exec"
 
 	"github.com/xiaohao0576/odoo-epos/raster"
 )
@@ -11,8 +11,10 @@ var NumberOCR *raster.RasterOCR
 
 func init() {
 	Transformers["reprint"] = func(input *raster.RasterImage) *raster.RasterImage {
+		if !isKitchenDuplicataPattern(input) {
+			return input
+		}
 		var orderNumber = getOrderNumber(input.SelectAll())
-		input.SelectRows(0, 40).FillBlack()
 		if orderNumber == nil {
 			return input
 		}
@@ -21,8 +23,8 @@ func init() {
 			char := NumberOCR.Recognize(number)
 			trackingNumber += char
 		}
-		fmt.Printf("Tracking Number: %s\n", trackingNumber)
-		return input
+		exec.Command("python3", "/usr/local/odoo-epos/reprint.py", trackingNumber).Start()
+		return nil // 返回 nil 表示不需要打印
 	}
 }
 
