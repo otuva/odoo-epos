@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
 	"golang.org/x/text/encoding/simplifiedchinese"
@@ -165,8 +164,6 @@ func tsplhandler01(w http.ResponseWriter, r *http.Request) {
 	// 将标签转换为TSPL格式
 	tsplData := labels.ToTSPL()
 
-	// 调试：输出生成的TSPL指令
-	log.Printf("Generated TSPL commands:\n%s", string(tsplData))
 	// 获取打印机名称
 	printer, ok := Printers[printerName]
 	if !ok {

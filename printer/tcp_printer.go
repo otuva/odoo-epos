@@ -35,14 +35,6 @@ func (p *TCPPrinter) Open() error {
 		return err
 	}
 	p.fd = conn
-	p.fd.SetWriteDeadline(time.Now().Add(5 * time.Second)) // 设置写超时
-	// 发送初始化命令
-	_, err = p.fd.Write([]byte{0x1B, 0x40}) // 初始化打印机
-	if err != nil {
-		p.fd.Close() // 如果初始化失败，关闭连接
-		p.fd = nil
-		return err
-	}
 	return nil
 }
 

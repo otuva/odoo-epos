@@ -8,7 +8,7 @@ Type=simple
 Restart=always
 RestartSec=5s
 WorkingDirectory=/usr/local/odoo-epos
-ExecStart=/usr/local/odoo-epos/epos -c config.json -p 443
+ExecStart=/usr/local/odoo-epos/epos -c config.json -p 1443
 
 [Install]
 WantedBy = multi-user.target

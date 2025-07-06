@@ -134,16 +134,17 @@ func (p *SerialPrinter) Reset() error {
 }
 
 func (p *SerialPrinter) PrintRaw(data []byte) error {
-	err := p.Reset()
-	defer p.fd.Close()
+	err := p.Open()
 	if err != nil {
-		return fmt.Errorf("failed to reset printer: %w", err)
+		return fmt.Errorf("failed to open printer: %w", err)
 	}
+	defer p.fd.Close()
 	if len(data) == 0 {
 		return fmt.Errorf("no data to print")
 	}
 	if _, err := p.fd.Write(data); err != nil {
 		return fmt.Errorf("failed to write data to printer: %w", err)
 	}
+	time.Sleep(1 * time.Second) // 等待打印机处理
 	return nil
 }

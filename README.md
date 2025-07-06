@@ -46,30 +46,44 @@ Step5. Config the url in Odoo POS "ePOS Printer" Ip address field
 Do NOT start with `https://`
 
 ```
-localhost.ip.hogantech.net/p0
-192-168-123-1.ip.hogantech.net/p1
+localhost.ip.hogantech.net:1443/p0
+192-168-123-1.ip.hogantech.net1443/p1
 ```
 
 ## Sample of config.json
 ```
 {
-    "p0": {
+    "usb": {
         "type": "usb",
         "address": "/dev/xp-n160ii",
         "paper_width": 576,
         "margin_bottom": 120
     },
+    "serial": {
+        "type": "serial",
+        "address": "COM1,baud=115200,databits=8,parity=N,stopbits=1",
+        "paper_width": 576,
+        "margin_bottom": 120
+    },
     "p1": {
         "type": "tcp",
-        "address": "192.168.123.51:9100"
+        "address": "192.168.123.101:9100"
     },
     "p2": {
         "type": "tcp",
-        "address": "192.168.123.52:9100"
+        "address": "192.168.123.102:9100"
     },
-    "f0": {
+    "p3": {
+        "type": "tcp",
+        "address": "192.168.123.103:9100"
+    },
+    "png": {
         "type": "file",
-        "address": "/tmp/receipts"
+        "address": "/tmp/pic"
+    },
+    "xp-236b": {
+        "type": "usb",
+        "address": "/dev/xp-236b"
     }
 }
 ```

@@ -81,10 +81,10 @@ func (p *USBPrinter) Reset() error {
 
 func (p *USBPrinter) PrintRaw(data []byte) error {
 	err := p.Open()
-	defer p.fd.Close()
 	if err != nil {
-		return fmt.Errorf("failed to reset printer: %w", err)
+		return fmt.Errorf("failed to open printer: %w", err)
 	}
+	defer p.fd.Close()
 	if len(data) == 0 {
 		return fmt.Errorf("no data to print")
 	}

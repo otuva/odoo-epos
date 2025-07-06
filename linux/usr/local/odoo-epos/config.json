@@ -26,5 +26,9 @@
     "png": {
         "type": "file",
         "address": "/tmp/pic"
+    },
+    "xp-236b": {
+        "type": "usb",
+        "address": "/dev/xp-236b"
     }
 }
