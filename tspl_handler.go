@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"golang.org/x/text/encoding/simplifiedchinese"
@@ -15,39 +16,65 @@ type label01 struct {
 	Name    string  `json:"name"`
 	Barcode string  `json:"barcode"`
 	Price   float64 `json:"price"`
-	Remark  string  `json:"remark"`
 	Copies  int     `json:"copies"`
 }
 type Label01List []label01
 
+// calculateCenterX 计算居中的X坐标
+// labelWidthDots: 标签宽度（以点为单位），40mm = 320点（以8点/mm计算）
+// fontWidthDots: 字体宽度（以点为单位），TSS24.BF2 字体约为 12 点宽
+// textLength: 文本字符数（中文字符按2个计算，英文数字按1个计算）
+func calculateCenterX(labelWidthDots int, fontWidthDots int, textLength int) int {
+	textWidthDots := textLength * fontWidthDots
+	centerX := (labelWidthDots - textWidthDots) / 2
+	if centerX < 0 {
+		centerX = 0 // 防止负数
+	}
+	return centerX
+}
+
+// getTextDisplayLength 计算文本显示长度（中文字符按2个计算，英文数字按1个计算）
+func getTextDisplayLength(text string) int {
+	length := 0
+	for _, r := range text {
+		if r > 127 { // 非ASCII字符，主要是中文
+			length += 2
+		} else {
+			length += 1
+		}
+	}
+	return length
+}
+
 // ToTSPL 方法将单个 Label01 转换为 TSPL 内容指令（不包含打印机配置）
 // 这个方法主要供 Label01List.ToTSPL() 调用，用于生成单个标签的内容部分
 // 返回标签内容的 TSPL 指令切片，不包含 SIZE、GAP 等配置命令和 PRINT 命令
+// 在XPrinter XP-236B打印机上，标签宽度为40mm，高度为30mm,测试通过
 func (label label01) toTSPL() []string {
 	// 将中文文本转换为GB18030编码
 	encoder := simplifiedchinese.GB18030.NewEncoder()
 	nameBytes, _ := encoder.Bytes([]byte(label.Name))
-	remarkBytes, _ := encoder.Bytes([]byte(label.Remark))
 
 	// 创建标签内容命令（不包含配置和打印命令）
 	tsplCommands := []string{}
 
-	// 产品名称 (最上方)
-	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,10,\"TSS24.BF2\",0,1,1,\"%s\"", string(nameBytes)))
+	// 产品名称 (最上方) - 实现居中打印
+	// 标签宽度40mm = 320点（8点/mm），TSS24.BF2字体约12点宽，倍数1,1
+	labelWidthDots := 320
+	fontWidthDots := 12 // TSS24.BF2 字体宽度
+	textDisplayLength := getTextDisplayLength(label.Name)
+	centerX := calculateCenterX(labelWidthDots, fontWidthDots, textDisplayLength)
+
+	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT %d,10,\"TSS24.BF2\",0,1,1,\"%s\"", centerX, string(nameBytes)))
 
 	// EAN13条形码 (中间)
 	if len(label.Barcode) == 13 {
-		tsplCommands = append(tsplCommands, fmt.Sprintf("BARCODE 10,60,\"EAN13\",60,1,0,2,2,\"%s\"", label.Barcode))
+		tsplCommands = append(tsplCommands, fmt.Sprintf("BARCODE 60,60,\"EAN13\",60,1,0,2,2,\"%s\"", label.Barcode))
 	}
 
-	// 价格 (下方)
-	priceText := fmt.Sprintf("¥%.2f", label.Price)
-	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,140,\"TSS24.BF2\",0,1,1,\"%s\"", priceText))
-
-	// 备注 (最下方)
-	if label.Remark != "" {
-		tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,180,\"TSS24.BF2\",0,1,1,\"%s\"", string(remarkBytes)))
-	}
+	// 价格 (下方) - 使用美元符号，使用更大的字体倍数
+	priceText := fmt.Sprintf("$%.2f", label.Price)
+	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 80,160,\"TSS24.BF2\",0,2,2,\"%s\"", priceText))
 
 	return tsplCommands
 }
@@ -73,6 +100,8 @@ func (labels Label01List) ToTSPL() []byte {
 	tsplCommands = append(tsplCommands, "SET CUTTER OFF")
 	tsplCommands = append(tsplCommands, "SET PARTIAL_CUTTER OFF")
 	tsplCommands = append(tsplCommands, "SET TEAR ON")
+	tsplCommands = append(tsplCommands, "DENSITY 8") // 设置打印浓度
+	tsplCommands = append(tsplCommands, "SPEED 4")   // 设置打印速度
 	tsplCommands = append(tsplCommands, "CLS")
 
 	// 为每个标签添加内容
@@ -87,9 +116,12 @@ func (labels Label01List) ToTSPL() []byte {
 			copies = 1
 		}
 
-		// 为每一份添加打印命令
-		for i := 0; i < copies; i++ {
-			tsplCommands = append(tsplCommands, "PRINT 1,1")
+		// 一次性打印该标签的所有副本，而不是循环多次
+		tsplCommands = append(tsplCommands, fmt.Sprintf("PRINT %d,1", copies))
+
+		// 如果有多个不同的标签，需要清除缓冲区准备下一个标签
+		if len(labels) > 1 {
+			tsplCommands = append(tsplCommands, "CLS")
 		}
 	}
 
@@ -119,7 +151,7 @@ func tsplhandler01(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	var labels Label01List
-	var printerName = "tspl_printer" // 默认打印机名称
+	var printerName = "xp-236b" // 默认打印机名称
 	// 解析请求体中的标签数据
 
 	if err := json.NewDecoder(r.Body).Decode(&labels); err != nil {
@@ -132,6 +164,9 @@ func tsplhandler01(w http.ResponseWriter, r *http.Request) {
 	}
 	// 将标签转换为TSPL格式
 	tsplData := labels.ToTSPL()
+
+	// 调试：输出生成的TSPL指令
+	log.Printf("Generated TSPL commands:\n%s", string(tsplData))
 	// 获取打印机名称
 	printer, ok := Printers[printerName]
 	if !ok {
