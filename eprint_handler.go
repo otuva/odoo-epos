@@ -24,6 +24,7 @@ func ePrintPNGhandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 	if r.Method == http.MethodOptions {
+		w.Header().Set("Access-Control-Allow-Private-Network", "true")
 		w.WriteHeader(http.StatusOK)
 		return
 	}
@@ -82,6 +83,7 @@ func ePrintRAWhandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 	if r.Method == http.MethodOptions {
+		w.Header().Set("Access-Control-Allow-Private-Network", "true")
 		w.WriteHeader(http.StatusOK)
 		return
 	}

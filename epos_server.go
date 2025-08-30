@@ -44,6 +44,7 @@ func ePOShandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == http.MethodOptions {
+		w.Header().Set("Access-Control-Allow-Private-Network", "true")
 		w.WriteHeader(http.StatusOK)
 		return
 	}
