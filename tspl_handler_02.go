@@ -45,31 +45,37 @@ func (label label02) toTSPL() []string {
 	// 创建标签内容命令（不包含配置和打印命令）
 	tsplCommands := []string{}
 
+	// 打印tracking number
+	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,10,\"TSS24.BF2\",0,1,1,\"%s%s\"", "#", encodeToGB18030String(label.TrackingNumber)))
+
+	//打印桌号
+	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 100,10,\"TSS24.BF2\",0,1,1,\"%s%s\"", "Table:", encodeToGB18030String(label.TableNumber)))
+
 	// 在右上角打印当前页码
-	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 300,10,\"TSS24.BF2\",0,1,1,\"%s\"", encodeToGB18030String(label.Page)))
+	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 230,10,\"TSS24.BF2\",0,1,1,\"%s\"", encodeToGB18030String(label.Page)))
 
 	// 打印产品名称
-	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,10,\"TSS24.BF2\",0,2,2,\"%s\"", encodeToGB18030String(label.ProductName)))
+	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,40,\"TSS24.BF2\",0,1,2,\"%s\"", encodeToGB18030String(label.ProductName)))
 
 	// 打印产品属性
-	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,40,\"TSS24.BF2\",0,2,2,\"%s\"", encodeToGB18030String(label.ProductAttributes)))
+	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,90,\"TSS24.BF2\",0,1,1,\"%s\"", encodeToGB18030String(label.ProductAttributes)))
 
 	// 打印备注
-	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,70,\"TSS24.BF2\",0,2,2,\"%s\"", encodeToGB18030String(label.Notes)))
+	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,150,\"TSS24.BF2\",0,1,1,\"%s\"", encodeToGB18030String(label.Notes)))
 
+	// 打印价格
 	var priceText string = fmt.Sprintf("%.2f", label.PriceUnit)
 	if label.CurrencyCode == "USD" {
-		priceText = fmt.Sprintf("%s %.2f", "$", label.PriceUnit)
+		priceText = fmt.Sprintf("%s%.2f", "$", label.PriceUnit)
 	}
 	if label.CurrencyCode == "KHR" {
-		priceText = fmt.Sprintf("%.2f %s", label.PriceUnit, "KHR")
+		priceText = fmt.Sprintf("%.0f %s", label.PriceUnit, "R")
 	}
-	// 打印价格
-	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,100,\"TSS24.BF2\",0,1,1,\"%s\"", encodeToGB18030String(priceText)))
+	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,185,\"TSS24.BF2\",0,1,2,\"%s\"", encodeToGB18030String(priceText)))
 
-	// 打印日期时间，格式 YYYY-MM-DD HH:MM:SS
-	timeString := time.Now().Format("2006-01-02 15:04:05")
-	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,130,\"TSS24.BF2\",0,1,1,\"%s\"", encodeToGB18030String(timeString)))
+	// 打印时间，格式 HH:MM
+	timeString := time.Now().Format("15:04")
+	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 230,210,\"TSS24.BF2\",0,1,1,\"%s\"", encodeToGB18030String(timeString)))
 
 	return tsplCommands
 }
