@@ -31,7 +31,7 @@ dpkg-deb --build linux epos.deb
 * Can print receipt to png file
 
 ## How to use in Odoo
-Step 1.  Force your Point of Sale to use a secure connection (HTTPS)
+Step 1.  If Odoo version <= 18.0, need to force your Point of Sale to use a secure connection (HTTPS)
 
 https://www.odoo.com/documentation/18.0/applications/sales/point_of_sale/configuration/https.html#force-your-point-of-sale-to-use-a-secure-connection-https
 
@@ -46,8 +46,8 @@ Step5. Config the url in Odoo POS "ePOS Printer" Ip address field
 Do NOT start with `https://`
 
 ```
-localhost.ip.hogantech.net:1443/p0
-192-168-123-1.ip.hogantech.net1443/p1
+localhost.ip.hogantech.net/p0
+192-168-123-1.ip.hogantech.net/p1
 ```
 
 ## Sample of config.json

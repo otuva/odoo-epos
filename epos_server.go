@@ -137,7 +137,6 @@ func StartHttpServer() {
 
 	// 在主线程中启动 HTTPS 服务器
 	fmt.Println("Version:", Version)
-	fmt.Println("point_of_sale.enforce_https = True")
 	fmt.Printf("Serving on https://%s\n", hostPort)
 	fmt.Println("Available printers:")
 	// 打印所有可用的打印机
