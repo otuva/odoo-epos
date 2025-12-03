@@ -74,7 +74,11 @@ func ePOShandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 优先检查是否为打印图片请求
+	// Print the request host IP and port for debugging
+	fmt.Printf("Received ePOS request from %s for printer %s\n", r.RemoteAddr, name)
+
+	// Check the type of ePOS command, and handle accordingly
+	// Check if it's an image print request
 	if strings.Contains(string(body), EPOS_IMAGE) {
 		img, err := raster.NewRasterImageFromXML(body)
 		if err != nil {
@@ -88,19 +92,19 @@ func ePOShandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Failed to print image:", err)
 			return
 		}
-		fmt.Println("打印成功", printer)
+		fmt.Println("Image print success.", printer)
 	} else if strings.Contains(string(body), EPOS_PULSE) {
-		// 检查是否为打开钱箱请求
+		// Check if it's a request to open the cash drawer
 		err := printer.OpenCashBox()
 		if err != nil {
 			http.Error(w, "Failed to open cash drawer", http.StatusInternalServerError)
 			fmt.Println("Failed to open cash drawer:", err)
 			return
 		}
-		// 打开钱箱成功
-		fmt.Println("打开钱箱成功", printer)
+		// Cash drawer opened successfully
+		fmt.Println("Cash drawer opened successfully.", printer)
 	} else {
-		fmt.Println("不支持的ePOS命令", string(body))
+		fmt.Println("Unsupported ePOS command", string(body))
 		http.Error(w, "Unsupported command, only support <pulse> and <image>", http.StatusInternalServerError)
 		return
 	}
