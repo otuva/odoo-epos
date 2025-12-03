@@ -55,7 +55,7 @@ func (label label02) toTSPL() []string {
 	//打印桌号
 	if label.TableNumber != 0 {
 		tableNumberStr := fmt.Sprintf("%d", label.TableNumber)
-		tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,30,\"TSS24.BF2\",0,1,1,\"%s%s\"", "Table:", encodeToGB18030String(tableNumberStr)))
+		tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 90,10,\"TSS24.BF2\",0,1,1,\"%s%s\"", "Table:", encodeToGB18030String(tableNumberStr)))
 	}
 
 	// 在右上角打印当前页码
@@ -65,7 +65,7 @@ func (label label02) toTSPL() []string {
 	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,40,\"TSS24.BF2\",0,1,2,\"%s\"", encodeToGB18030String(label.ProductName)))
 
 	// 打印产品属性
-	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,90,\"TSS24.BF2\",0,1,1,\"%s\"", encodeToGB18030String(label.ProductAttributes)))
+	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,100,\"TSS24.BF2\",0,1,1,\"%s\"", encodeToGB18030String(label.ProductAttributes)))
 
 	// 打印备注
 	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,150,\"TSS24.BF2\",0,1,1,\"%s\"", encodeToGB18030String(label.Notes)))
@@ -78,7 +78,7 @@ func (label label02) toTSPL() []string {
 	if label.CurrencyCode == "KHR" {
 		priceText = fmt.Sprintf("%.0f %s", label.PriceUnit, "R")
 	}
-	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,185,\"TSS24.BF2\",0,1,2,\"%s\"", encodeToGB18030String(priceText)))
+	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,185,\"TSS24.BF2\",0,2,2,\"%s\"", encodeToGB18030String(priceText)))
 
 	// 打印时间，格式 HH:MM
 	timeString := time.Now().Format("15:04")
