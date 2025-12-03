@@ -18,7 +18,8 @@ import (
 const (
 	EPOS_PULSE    = "pulse"
 	EPOS_IMAGE    = "image"
-	EPOS_RESPONSE = `<response success="true" code="0">ok</response>`
+	EPOS_TEST     = "test"
+	EPOS_RESPONSE = `<response success="true" code="">ok</response>`
 )
 
 var ServerCert []byte
@@ -103,6 +104,14 @@ func ePOShandler(w http.ResponseWriter, r *http.Request) {
 		}
 		// Cash drawer opened successfully
 		fmt.Println("Cash drawer opened successfully.", printer)
+	} else if strings.Contains(string(body), EPOS_TEST) {
+		// Handle test page print request
+		err := PrintTestPage(printer)
+		if err != nil {
+			http.Error(w, "Failed to print test page", http.StatusInternalServerError)
+			fmt.Println("Failed to print test page:", err)
+			return
+		}
 	} else {
 		fmt.Println("Unsupported ePOS command", string(body))
 		http.Error(w, "Unsupported command, only support <pulse> and <image>", http.StatusInternalServerError)
