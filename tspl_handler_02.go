@@ -49,7 +49,9 @@ func (label label02) toTSPL() []string {
 	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,10,\"TSS24.BF2\",0,1,1,\"%s%s\"", "#", encodeToGB18030String(label.TrackingNumber)))
 
 	//打印桌号
-	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 100,10,\"TSS24.BF2\",0,1,1,\"%s%s\"", "Table:", encodeToGB18030String(label.TableNumber)))
+	if label.TableNumber != "" {
+		tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,30,\"TSS24.BF2\",0,1,1,\"%s%s\"", "Table:", encodeToGB18030String(label.TableNumber)))
+	}
 
 	// 在右上角打印当前页码
 	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 230,10,\"TSS24.BF2\",0,1,1,\"%s\"", encodeToGB18030String(label.Page)))
