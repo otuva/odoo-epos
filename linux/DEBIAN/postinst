@@ -1,9 +1,27 @@
 #!/bin/bash
 set -e
 
-chmod 755 /usr/local/odoo-epos/epos
-udevadm control --reload
-udevadm trigger
-systemctl daemon-reload
-systemctl start epos.service
-systemctl enable epos.service
+# 设置程序执行权限
+chmod 755 /usr/local/odoo-epos/epos || true
+
+# 重新加载udev规则（如果失败不影响安装）
+if command -v udevadm >/dev/null 2>&1; then
+    udevadm control --reload || true
+    udevadm trigger || true
+fi
+
+# 重新加载systemd并启动服务
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl daemon-reload || true
+    
+    # 启动服务，如果失败也不阻塞安装
+    systemctl start epos.service || echo "Warning: Failed to start epos.service"
+    
+    # 启用开机自启动
+    systemctl enable epos.service || echo "Warning: Failed to enable epos.service"
+else
+    echo "Warning: systemctl not found, service not configured"
+fi
+
+# 确保脚本正常退出
+exit 0
