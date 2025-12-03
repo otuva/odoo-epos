@@ -14,7 +14,7 @@ import (
 // 该结构体用于生成 TSPL 格式的标签打印指令
 type label02 struct {
 	CompanyName       string  `json:"company_name"`
-	TableNumber       string  `json:"table_number"`
+	TableNumber       int     `json:"table_number"`
 	TrackingNumber    string  `json:"tracking_number"`
 	CustomerName      string  `json:"customer_name"`
 	ProductName       string  `json:"product_name"`
@@ -25,6 +25,10 @@ type label02 struct {
 	PriceUnit         float64 `json:"price_unit"`
 	CurrencyCode      string  `json:"currency_code"`
 	Page              string  `json:"page"`
+	FullProductName   string  `json:"full_product_name"`
+	Qty               int     `json:"qty"`
+	CurrencySymbol    string  `json:"currency_symbol"`
+	CurrencyName      string  `json:"currency_name"`
 }
 type Label02List []label02
 
@@ -49,8 +53,9 @@ func (label label02) toTSPL() []string {
 	tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,10,\"TSS24.BF2\",0,1,1,\"%s%s\"", "#", encodeToGB18030String(label.TrackingNumber)))
 
 	//打印桌号
-	if label.TableNumber != "" {
-		tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,30,\"TSS24.BF2\",0,1,1,\"%s%s\"", "Table:", encodeToGB18030String(label.TableNumber)))
+	if label.TableNumber != 0 {
+		tableNumberStr := fmt.Sprintf("%d", label.TableNumber)
+		tsplCommands = append(tsplCommands, fmt.Sprintf("TEXT 10,30,\"TSS24.BF2\",0,1,1,\"%s%s\"", "Table:", encodeToGB18030String(tableNumberStr)))
 	}
 
 	// 在右上角打印当前页码
