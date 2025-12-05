@@ -26,7 +26,6 @@ type label02 struct {
 	CurrencyCode      string  `json:"currency_code"`
 	Page              string  `json:"page"`
 	FullProductName   string  `json:"full_product_name"`
-	Qty               int     `json:"qty"`
 	CurrencySymbol    string  `json:"currency_symbol"`
 	CurrencyName      string  `json:"currency_name"`
 }
