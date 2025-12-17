@@ -29,7 +29,7 @@ func (p *USBPrinter) Open() error {
 		return os.ErrInvalid
 	}
 	var err error
-	p.fd, err = os.OpenFile(p.filePath, os.O_WRONLY|os.O_CREATE, 0644)
+	p.fd, err = os.OpenFile(p.filePath, os.O_WRONLY, 0644)
 	if err != nil {
 		fmt.Printf("Error opening USB printer: %v\n", err)
 		return err
