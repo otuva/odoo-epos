@@ -42,7 +42,10 @@ func (p *USBPrinter) OpenCashBox() error {
 	if err != nil {
 		return fmt.Errorf("failed to reset printer: %w", err)
 	}
-	defer p.fd.Close()
+	defer func() {
+		p.fd.Sync()
+		p.fd.Close()
+	}()
 	p.fd.Write(p.cashDrawerCommand)
 	return nil
 }
@@ -56,7 +59,10 @@ func (p *USBPrinter) PrintRasterImage(img *raster.RasterImage) error {
 	if err != nil {
 		return fmt.Errorf("failed to reset printer: %w", err)
 	}
-	defer p.fd.Close()
+	defer func() {
+		p.fd.Sync()
+		p.fd.Close()
+	}()
 	for _, page := range img.CutPages() {
 		page.AutoMarginLeft(p.paperWidth)
 		page.AddMarginBottom(p.marginBottom)
@@ -72,6 +78,7 @@ func (p *USBPrinter) Reset() error {
 	p.Open()
 	_, err := p.fd.Write([]byte{0x1B, 0x40}) // 初始化打印机
 	if err != nil {
+		p.fd.Sync()
 		p.fd.Close()
 		p.fd = nil
 		return err
@@ -84,7 +91,10 @@ func (p *USBPrinter) PrintRaw(data []byte) error {
 	if err != nil {
 		return fmt.Errorf("failed to open printer: %w", err)
 	}
-	defer p.fd.Close()
+	defer func() {
+		p.fd.Sync()
+		p.fd.Close()
+	}()
 	if len(data) == 0 {
 		return fmt.Errorf("no data to print")
 	}
