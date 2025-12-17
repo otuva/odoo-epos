@@ -138,24 +138,41 @@ func StartHttpServer() {
 		return
 	}
 
-	hostPort := net.JoinHostPort("0.0.0.0", *Port)
+	httpsHostPort := net.JoinHostPort("0.0.0.0", *Port)
+	httpHostPort := net.JoinHostPort("0.0.0.0", "80")
 
+	// 创建HTTPS服务器
 	httpsServer := &http.Server{
-		Addr: hostPort,
+		Addr: httpsHostPort,
 		TLSConfig: &tls.Config{
 			MinVersion:   tls.VersionTLS12,
 			Certificates: []tls.Certificate{cert},
 		},
 	}
 
-	// 在主线程中启动 HTTPS 服务器
+	// 创建HTTP服务器
+	httpServer := &http.Server{
+		Addr: httpHostPort,
+	}
+
 	fmt.Println("Version:", Version)
-	fmt.Printf("Serving on https://%s\n", hostPort)
 	fmt.Println("Available printers:")
 	// 打印所有可用的打印机
 	for name, printer := range Printers {
 		fmt.Println("Printer:", name, printer)
 	}
+
+	// 在goroutine中启动HTTP服务器
+	go func() {
+		fmt.Println("Starting HTTP server on port 80...")
+		fmt.Println("Add point_of_sale.use_lan to True in odoo system parameters to enable local network access")
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			fmt.Println("Failed to start HTTP server:", err)
+		}
+	}()
+
+	// 在主线程中启动HTTPS服务器
+	fmt.Println("Starting HTTPS server on port", *Port, "...")
 	err = httpsServer.ListenAndServeTLS("", "")
 	if err != nil {
 		fmt.Println("Failed to start HTTPS server:", err)
