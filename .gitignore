@@ -5,6 +5,7 @@
 *.so
 *.dylib
 *.deb
+epos-linux-amd64
 bin/
 
 linux/usr/local/odoo-epos/epos
