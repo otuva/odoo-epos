@@ -4,8 +4,8 @@ import (
 	"net/http"
 )
 
-// StatusJSONHandler 处理 /hw_proxy/status_json POST 请求，返回固定JSON数据
-func (h *HwProxyHandler) StatusJSONHandler(w http.ResponseWriter, r *http.Request) {
+// StatusHandler 处理 /hw_proxy/status_json RPC POST 请求，返回固定JSON数据
+func (h *HwProxyHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 	setCORSHeaders(w)
 
 	if r.Method == http.MethodOptions {
