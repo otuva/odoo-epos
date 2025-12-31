@@ -5,7 +5,7 @@ import (
 )
 
 // StatusJSONHandler 处理 /hw_proxy/default_printer_action jsonrpc 请求，返回固定JSON数据
-func (h *HwProxyHandler) DefaultPrinterActionHandler(w http.ResponseWriter, r *http.Request) {
+func (h *HwProxy) DefaultPrinterActionHandler(w http.ResponseWriter, r *http.Request) {
 	setCORSHeaders(w)
 
 	if r.Method == http.MethodOptions {

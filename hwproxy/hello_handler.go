@@ -5,7 +5,7 @@ import (
 )
 
 // HelloHandler 处理 /hw_proxy/hello GET 请求
-func (h *HwProxyHandler) HelloHandler(w http.ResponseWriter, r *http.Request) {
+func (h *HwProxy) HelloHandler(w http.ResponseWriter, r *http.Request) {
 	setCORSHeaders(w)
 
 	if r.Method == http.MethodOptions {
