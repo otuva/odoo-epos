@@ -1,6 +1,6 @@
 package hwdriver
 
-var Scale01 = SerialScaleDriver{
+var Scale01 = &SerialScaleDriver{
 	BaseDriver: BaseDriver{
 		DeviceIdentifier:   "scale01",
 		DeviceName:         "Generic Serial Scale",
