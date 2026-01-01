@@ -8,8 +8,8 @@ type SerialProtocol struct {
 	ByteSize     int
 	Parity       byte
 	StopBits     byte
-	Timeout      int // in milliseconds
-	WriteTimeout int // in milliseconds
+	Timeout      int // in seconds
+	WriteTimeout int // in seconds
 }
 
 // getSerialConfig constructs a serial.Config from SerialProtocol

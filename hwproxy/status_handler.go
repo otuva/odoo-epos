@@ -1,10 +1,16 @@
 package hwproxy
 
 import (
+	"encoding/json"
 	"net/http"
 )
 
-// StatusHandler 处理 /hw_proxy/status_json RPC POST 请求，返回固定JSON数据
+// StatusResponse 定义状态响应的结构
+type StatusResponse struct {
+	Scale map[string]string `json:"scale"`
+}
+
+// StatusHandler 处理 /hw_proxy/status_json RPC POST 请求，返回硬件状态JSON数据
 func (h *HwProxy) StatusHandler(w http.ResponseWriter, r *http.Request) {
 	setCORSHeaders(w)
 
@@ -18,7 +24,22 @@ func (h *HwProxy) StatusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 获取电子秤状态
+	response := StatusResponse{
+		Scale: make(map[string]string),
+	}
+
+	if h.Scale != nil {
+		status := h.Scale.GetStatus()
+		response.Scale["status"] = status.Status
+		if status.Message != "" {
+			response.Scale["message"] = status.Message
+		}
+	} else {
+		response.Scale["status"] = "disconnected"
+		response.Scale["message"] = "Scale driver not initialized"
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	status := `{"scale": {"status": "connected"}, "printer": {"status": "connected"}, "scanner": {"status": "connected"}}`
-	w.Write([]byte(status))
+	json.NewEncoder(w).Encode(response)
 }
