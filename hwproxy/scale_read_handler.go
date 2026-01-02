@@ -1,11 +1,16 @@
 package hwproxy
 
 import (
-	"fmt"
+	"encoding/json"
 	"net/http"
 )
 
-// StatusJSONHandler 处理 hw_proxy/scale_read jsonrpc 请求，返回电子秤的重量JSON数据
+// ScaleReadResponse 定义称重响应的结构
+type ScaleReadResponse struct {
+	Weight float64 `json:"weight"`
+}
+
+// ScaleReadHandler 处理 hw_proxy/scale_read jsonrpc 请求，返回电子秤的重量JSON数据
 func (h *HwProxy) ScaleReadHandler(w http.ResponseWriter, r *http.Request) {
 	setCORSHeaders(w)
 
@@ -19,10 +24,22 @@ func (h *HwProxy) ScaleReadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// do something here, currently always return true
-	var weight float64 = 1.23
-	result := `{"weight": ` + fmt.Sprintf("%.2f", weight) + `}`
+	// 读取电子秤重量
+	var weight float64 = 0.0
+
+	if h.Scale != nil {
+		// 调用ReadWeight来获取最新重量
+		err := h.Scale.ReadWeight()
+		if err == nil {
+			weight = h.Scale.GetWeight()
+		}
+		// 即使读取失败，也返回上次的重量值
+	}
+
+	response := ScaleReadResponse{
+		Weight: weight,
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(result))
+	json.NewEncoder(w).Encode(response)
 }
