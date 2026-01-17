@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	Version    = "1.3.0"
+	Version    = "1.4.0"
 	Port       *string
 	ConfigFile *string
 	Printers   eprinter.Printers

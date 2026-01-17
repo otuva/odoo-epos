@@ -8,9 +8,3 @@ import (
 type HwProxy struct {
 	Scale *hwdriver.SerialScaleDriver
 }
-
-func NewHwProxy() *HwProxy {
-	return &HwProxy{
-		Scale: hwdriver.Scale01,
-	}
-}
